@@ -1,3 +1,4 @@
+start=proc.time()
 #Normal-Gamma model with unknown mean and variance
 
 #Set seed for reproducibility
@@ -54,4 +55,7 @@ stan_prior_le <- m + log(mean(exp(likelihood_prior_log - m)))
 stan_prior_le
 
 
+end=proc.time()
 
+timer<- end-start
+timer[3]
