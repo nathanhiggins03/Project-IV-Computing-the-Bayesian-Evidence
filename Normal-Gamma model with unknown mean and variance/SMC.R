@@ -1,3 +1,4 @@
+start=proc.time()
 #Normal-Gamma model with unknown mean and variance
 
 #Set seed for reproducibility
@@ -103,3 +104,8 @@ for (t in 1:T) {
   smc_log <- smc_log + log(mean(exp(log_w[t, ] - max_logw))) + max_logw
 }
 smc_log
+
+end=proc.time()
+
+timer<- end-start
+timer[3]
