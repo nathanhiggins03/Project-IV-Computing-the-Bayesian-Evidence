@@ -1,3 +1,4 @@
+start=proc.time()
 #Normal-Gamma model with unknown mean and variance
 
 #Set seed for reproducibility
@@ -115,3 +116,8 @@ for(t in 2:(T+1)){
   power_post_est<- power_post_est + (t_list[t] - t_list[t-1]) *(0.5*(rowMeans(E)[t] + rowMeans(E)[t-1]))
 }
 power_post_est
+
+end=proc.time()
+
+timer<- end-start
+timer[3]
