@@ -1,3 +1,4 @@
+start=proc.time()
 #Normal-Gamma model with unknown mean and variance
 
 #Set seed for reproducibility
@@ -45,3 +46,8 @@ sigma<- solve(-Hessian)
 
 LogLaplace<- (d / 2)*log(2*pi) +0.5*log(det(sigma)) + l_theta(theta_mode, x)
 LogLaplace
+
+end=proc.time()
+
+timer<- end-start
+timer[3]
