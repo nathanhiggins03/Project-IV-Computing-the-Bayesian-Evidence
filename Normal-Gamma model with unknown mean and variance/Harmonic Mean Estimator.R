@@ -1,4 +1,4 @@
-
+start=proc.time()
 #Set seed for reproducibility
 set.seed(123)
 
@@ -59,4 +59,10 @@ m<-max(likelihood_log)
 hme_log<- log(length(posterior_sample_mu)) - log(exp(-m) * sum(exp(-likelihood_log + m)))
 #Tends to be larger as HME overestimates as it is statistical unstable
 hme_log
+
+end=proc.time()
+
+timer<- end-start
+timer[3]
+
 
