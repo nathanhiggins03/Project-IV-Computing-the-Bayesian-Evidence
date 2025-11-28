@@ -55,7 +55,7 @@ power_post_log<- function(t, theta,X,y){
 T<- 50
 
 #N is number of (gibbs) samples for each tempered distribution
-Nsim<-50000
+Nsim<-20000
 
 #Sample from joint prior
 
