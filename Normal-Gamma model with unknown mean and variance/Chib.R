@@ -1,3 +1,4 @@
+start=proc.time()
 #Normal-Gamma model with unknown mean and variance
 
 #Set seed for reproducibility
@@ -113,3 +114,8 @@ llike<- sum(dnorm(x,theta_mode[1], sqrt(1/theta_mode[2]), log=TRUE))
 
 chibs<- lprior + llike - log_posterior
 chibs
+
+end=proc.time()
+
+timer<- end-start
+timer[3]
