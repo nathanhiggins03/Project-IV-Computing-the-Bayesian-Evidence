@@ -1,8 +1,10 @@
-start=proc.time()
+ start=proc.time()
 #Adapt for Bayes Linear Regression
 #Set seed for reproducibility
 set.seed(123)
 
+library(mvtnorm)
+library(extraDistr)
 setwd("~/Desktop/Project IV") 
 library(rstan)
 library(durhamSLR) 
@@ -94,6 +96,9 @@ sigma_sq_samples<- matrix(0,nrow = T+1, ncol = Nsim)
 beta_samples[1,1,]<-prior_sample_Beta1
 beta_samples[2,1,]<-prior_sample_Beta2
 sigma_sq_samples[1,]<-prior_sample_sigma_sq
+
+#Need to store log of unnormalised weights
+log_w<-matrix(0,nrow = T, ncol = Nsim)
 
 # Set initial log weights.
 log_w[1,] <- 0
