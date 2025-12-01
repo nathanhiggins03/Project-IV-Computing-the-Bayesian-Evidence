@@ -1,3 +1,36 @@
+start=proc.time()
+#Set seed for reproducibility
+set.seed(123)
+#Data
+#y=2+3x+ϵ,ϵ∼N(0,0.5^2)
+
+N <- 30
+x <- runif(N, 0, 5)
+X <- cbind(1, x)   # include intercept
+beta_true <- c(2, 3)
+sigma_true <- 0.5
+y <- as.vector(X %*% beta_true + rnorm(N, 0, sigma_true))
+
+#Data we have is
+X
+y
+
+#Prior inputs
+d <- ncol(X)
+m0 <- rep(1, d)
+Lambda0 <- diag(5, d)   # vague prior
+alpha0 <- 3
+beta0  <- 2 * var(y)
+
+
+#Posterior distribution inputs
+LambdaN <- Lambda0 + t(X) %*% X
+mN <- solve(LambdaN, Lambda0 %*% m0 + t(X) %*% y)
+alphaN <- alpha0 + N / 2
+betaN <- beta0 + 0.5 * (t(y) %*% y + t(m0) %*% Lambda0 %*% m0 - t(mN) %*% LambdaN %*% mN)
+
+
+
 #Mean of likelihood using prior samples:
 
 #Sample from prior using STAN
@@ -37,4 +70,9 @@ for(i in 1:length(prior_sample_Beta1)){
 #Apply log sum exp trick to log(mean(likelihood))
 m <- max(likelihood_prior_log)
 stan_prior_le <- m + log(mean(exp(likelihood_prior_log - m)))
+stan_prior_le
 
+end=proc.time()
+
+timer<- end-start
+timer[3]
