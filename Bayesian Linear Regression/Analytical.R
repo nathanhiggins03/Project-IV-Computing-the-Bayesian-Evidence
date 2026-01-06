@@ -20,7 +20,7 @@ d <- ncol(X)
 m0 <- rep(1, d)
 Lambda0 <- diag(5, d)   # vague prior
 alpha0 <- 3
-beta0  <- 5
+beta0  <- 36
 
 
 #Posterior distribution inputs
@@ -37,6 +37,7 @@ term2 <- alpha0 * log(beta0) - alphaN * log(betaN)
 term3 <- log(gamma(alphaN)) - log(gamma(alpha0))
 term4 <- -(N/2) * log(2*pi)
 true_le<- term1 + term2 + term3 + term4
+true_le
 
 end=proc.time()
 
