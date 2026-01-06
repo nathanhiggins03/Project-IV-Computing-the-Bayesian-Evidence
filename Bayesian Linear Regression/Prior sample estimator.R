@@ -20,7 +20,7 @@ d <- ncol(X)
 m0 <- rep(1, d)
 Lambda0 <- diag(5, d)   # vague prior
 alpha0 <- 3
-beta0  <- 5
+beta0  <- 36
 
 
 #Posterior distribution inputs
