@@ -1,3 +1,4 @@
+start = proc.time()
 #Bayesian Linear Regression with unknown beta and precision
 set.seed(123)
 #Data
@@ -36,6 +37,11 @@ term2 <- alpha0 * log(beta0) - alphaN * log(betaN)
 term3 <- log(gamma(alphaN)) - log(gamma(alpha0))
 term4 <- -(N/2) * log(2*pi)
 true_le<- term1 + term2 + term3 + term4
+
+end=proc.time()
+
+timer<- end-start
+timer[3]
 
 
 
