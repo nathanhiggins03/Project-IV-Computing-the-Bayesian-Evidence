@@ -1,3 +1,13 @@
+setwd("~/Desktop/Project IV") 
+library(rstan)
+library(durhamSLR) 
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+# Compile the Stan model once
+stan_model_obj <- stan_model('Power Posterior Bayes Linear Regression.stan')
+prior_model <- stan_model(
+  'Prior Bayesian Linear Regression.stan'
+)
 start=proc.time()
 #Adapt for Bayes Linear Regression
 #Set seed for reproducibility
@@ -5,11 +15,7 @@ set.seed(123)
 
 library(mvtnorm)
 library(extraDistr)
-setwd("~/Desktop/Project IV") 
-library(rstan)
-library(durhamSLR) 
-rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores())
+
 
 # --- 1. DATA, PRIORS, and HYPERPARAMETERS ---
 
@@ -68,13 +74,19 @@ Beta_t <- function(t, c=c_power){
 t_list <- Beta_t(0:T) # T+1 tempered posteriors
 
 
-# Compile the Stan model once
-stan_model_obj <- stan_model('Power Posterior Bayes Linear Regression.stan')
+
 
 # Sample from joint prior to initialise the arrays
-prior_fit = stan('Prior Bayesian Linear Regression.stan', 
-                 data = list(N=length(y),d=d, X=X, m0=m0,alpha0=alpha0,beta0=beta0, Lambda0 = Lambda0), 
-                 iter =200000, chains = 1, algorithm = "Fixed_param")
+prior_fit <- sampling(
+  prior_model,
+  data = list(N=length(y), d=d, X=X,
+              m0=m0, alpha0=alpha0,
+              beta0=beta0, Lambda0 = Lambda0),
+  iter = 200000,
+  chains = 1,
+  algorithm = "Fixed_param",
+  refresh = 0
+)
 
 #Extract Prior samples
 prior_sample_sigma_sq_all<- extract(prior_fit, pars = 'sigma_sq')$'sigma_sq'  
