@@ -1,12 +1,17 @@
-start=proc.time()
-#Set seed for reproducibility
-set.seed(123)
-
 setwd("~/Desktop/Project IV") 
 library(rstan)
 library(durhamSLR) 
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
+
+# Compile the Stan model once
+stan_model_obj <- stan_model('Power Posterior Normal Normal model with unknown mean and precision.stan')
+prior_model <- stan_model('Prior Normal Normal with unknown mean and precision.stan')
+
+start=proc.time()
+#Set seed for reproducibility
+set.seed(123)
+
 
 # --- 1. DATA, PRIORS, and HYPERPARAMETERS ---
 
@@ -59,10 +64,15 @@ t_list <- Beta_t(0:T) # T+1 tempered posteriors
 stan_model_obj <- stan_model('Power Posterior Normal Normal model with unknown mean and precision.stan')
 
 # Sample from joint prior to initialise the arrays
-prior_fit = stan('Prior Normal Normal with unknown mean and precision.stan', 
-                 data = list(k0=k0, m0=m0, alpha0=alpha0, beta0=beta0), 
-                 iter = 2*N, chains = 1, algorithm = "Fixed_param")
 
+prior_fit <- sampling(
+  prior_model,
+  data = list(k0=k0, m0=m0, alpha0=alpha0, beta0=beta0),
+  iter = 2*N,
+  chains = 1,
+  algorithm = "Fixed_param",
+  refresh = 0
+)
 # Extract Prior samples (taking the last N samples)
 prior_sample_mu <- tail(extract(prior_fit, pars = 'mu')$'mu', N) 
 prior_sample_tau <- tail(extract(prior_fit, pars = 'tau')$'tau', N)
@@ -145,4 +155,5 @@ end=proc.time()
 
 timer<- end-start
 timer[3]
+
 
