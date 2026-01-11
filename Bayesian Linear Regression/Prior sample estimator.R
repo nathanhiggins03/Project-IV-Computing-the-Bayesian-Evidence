@@ -1,3 +1,14 @@
+library(rstan)
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+setwd("~/Desktop/Project IV")
+
+prior_model <- stan_model(
+  file = "Prior Bayesian Linear Regression.stan"
+)
+
 start=proc.time()
 #Set seed for reproducibility
 set.seed(123)
@@ -43,9 +54,18 @@ rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
 #Need lots of draws for it to work
-prior_fit = stan('Prior Bayesian Linear Regression.stan', 
-                 data = list(N=N,d=d, X=X, m0=m0,alpha0=alpha0,beta0=beta0, Lambda0 = Lambda0), 
-                 iter =100000, chains = 1, algorithm = "Fixed_param")
+prior_fit <- sampling(
+  prior_model,
+  data = list(
+    N = N, d = d, X = X,
+    m0 = m0, alpha0 = alpha0,
+    beta0 = beta0, Lambda0 = Lambda0
+  ),
+  iter = 100000,
+  chains = 1,
+  algorithm = "Fixed_param",
+  refresh = 0
+)
 
 #Diagnostic checks
 print(prior_fit)
