@@ -1,3 +1,17 @@
+
+#Apply MCMC to model- get posterior mu samples
+library(rstan)
+library(durhamSLR)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+
+setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
+
+
+# Compile the posterior model once
+posterior_model <- stan_model("Posterior Normal Normal model with unknown mean and precision.stan")
+
 start=proc.time()
 #Set seed for reproducibility
 set.seed(123)
@@ -35,9 +49,14 @@ setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
 #Stan Data
 stan_data<- list(x=x, N=length(x),k0=k0, m0=m0,alpha0=alpha0,beta0=beta0)
 
-posterior_sample <- stan(
-  file = "Posterior Normal Normal model with unknown mean and precision.stan",
-  data = stan_data, iter = 10000)
+posterior_sample <- sampling(
+  posterior_model,
+  data = stan_data,
+  iter = 10000,
+  chains = 1,
+  refresh = 0
+)
+
 
 #Diagnostic checks
 #print(posterior_sample)
@@ -64,5 +83,3 @@ end=proc.time()
 
 timer<- end-start
 timer[3]
-
-
