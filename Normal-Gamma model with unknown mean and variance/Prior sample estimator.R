@@ -1,3 +1,13 @@
+#Sample from prior using STAN
+setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
+library(rstan)
+library(durhamSLR)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+# Compile the prior model once
+prior_model <- stan_model("Prior Normal Normal with unknown mean and precision.stan")
+
 start=proc.time()
 #Normal-Gamma model with unknown mean and variance
 
@@ -23,16 +33,21 @@ beta1<- beta0 + 1/2 * (n-1) * var(x) + (k0 *n * (mean(x) - m0)^2)/(2 * k1)
 
 #Mean of likelihood using prior samples:
 
-#Sample from prior using STAN
-setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
-library(rstan)
-library(durhamSLR)
-rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores())
 
-prior_fit = stan('Prior Normal Normal with unknown mean and precision.stan', 
-                 data = list(k0=k0, m0=m0,alpha0=alpha0,beta0=beta0), 
-                 iter =1000, chains = 1, algorithm = "Fixed_param")
+
+prior_fit <- sampling(
+  prior_model,
+  data = list(
+    k0 = k0,
+    m0 = m0,
+    alpha0 = alpha0,
+    beta0 = beta0
+  ),
+  iter = 1000,
+  chains = 1,
+  algorithm = "Fixed_param",
+  refresh = 0
+)
 
 #Diagnostic checks
 #print(prior_fit)
