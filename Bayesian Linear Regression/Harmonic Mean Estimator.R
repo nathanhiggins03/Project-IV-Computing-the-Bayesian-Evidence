@@ -1,3 +1,14 @@
+library(rstan)
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+setwd("~/Desktop/Project IV")
+
+posterior_model <- stan_model(
+  file = "Posterior Bayesian Linear Regression.stan"
+)
+
 start=proc.time()
 
 #Bayesian Linear Regression with unknown beta and precision
@@ -50,9 +61,13 @@ setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
 #Stan Data
 stan_data<- list(N=N,d=d, X=X, m0=m0,alpha0=alpha0,beta0=beta0, Lambda0 = Lambda0, y=y)
 
-posterior_sample <- stan(
-  file = "Posterior Bayesian Linear Regression.stan",
-  data = stan_data, iter = 50000)
+posterior_sample <- sampling(
+  posterior_model,
+  data = stan_data,
+  iter = 50000,
+  chains = 1,
+  refresh = 0
+)
 
 #Diagnostic checks
 #print(posterior_sample)
