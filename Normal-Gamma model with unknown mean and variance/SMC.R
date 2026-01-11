@@ -1,3 +1,11 @@
+setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
+
+library(rstan)
+library(durhamSLR)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+prior_model <- stan_model('Prior Normal Normal with unknown mean and precision.stan')
+
 start=proc.time()
 #Normal-Gamma model with unknown mean and variance
 
@@ -44,10 +52,18 @@ library(durhamSLR)
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-prior_fit = stan('Prior Normal Normal with unknown mean and precision.stan', 
-                 data = list(k0=k0, m0=m0,alpha0=alpha0,beta0=beta0), 
-                 iter =4000, chains = 1, algorithm = "Fixed_param")
-
+#prior_fit = stan('Prior Normal Normal with unknown mean and precision.stan', 
+#                 data = list(k0=k0, m0=m0,alpha0=alpha0,beta0=beta0), 
+#                 iter =4000, chains = 1, algorithm = "Fixed_param")
+# Prior sampling
+prior_fit <- sampling(
+  prior_model,
+  data = list(k0=k0, m0=m0,alpha0=alpha0,beta0=beta0),
+  iter = 2000,          # number of draws you want
+  chains = 1,
+  algorithm = "Fixed_param",
+  refresh = 0
+)
 #Extract Prior samples
 prior_sample_mu<- extract(prior_fit, pars = 'mu')$'mu'  
 prior_sample_tau<- extract(prior_fit, pars = 'tau')$'tau'
