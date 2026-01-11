@@ -1,3 +1,14 @@
+setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
+
+library(rstan)
+library(durhamSLR)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+
+prior_model <- stan_model("Prior Bayesian Linear Regression.stan")
+power_model <- stan_model("Power Posterior Bayes Linear Regression.stan")
+
 start=proc.time()
 
 #Bayesian Linear Regression with unknown beta and precision
@@ -56,17 +67,25 @@ power_like_log<- function(t, theta,X,y){
 Nsim<-10000
 #Sample from prior using STAN
 
-setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
-
-library(rstan)
-library(durhamSLR)
-rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores())
-
 #Need lots of draws for it to work
-prior_fit = stan('Prior Bayesian Linear Regression.stan', 
-                 data = list(N=length(y),d=d, X=X, m0=m0,alpha0=alpha0,beta0=beta0, Lambda0 = Lambda0), 
-                 iter =200000, chains = 1, algorithm = "Fixed_param")
+prior_fit <- sampling(
+  prior_model,
+  data = list(
+    N = length(y),
+    d = d,
+    X = X,
+    y = y,
+    m0 = m0,
+    Lambda0 = Lambda0,
+    alpha0 = alpha0,
+    beta0 = beta0
+  ),
+  iter = 200000,
+  chains = 1,
+  algorithm = "Fixed_param",
+  refresh = 0
+)
+
 
 #Extract Prior samples
 prior_sample_sigma_sq_all<- extract(prior_fit, pars = 'sigma_sq')$'sigma_sq'  
@@ -115,25 +134,54 @@ for (i in 1:Nsim) {
 }
 
 
+N_samples_warmup <- 0
+N_samples_kept   <- Nsim
 
 #Now need to structure calculating weights then getting new samples in loops
 for(t in 2:(T+1)){
-  power<-t_list[t]
-  init_list <- lapply(1:4, function(j) {
+  power <- t_list[t]
+  
+  # Init: pick Nsim indices from previous temperature
+  init_list <- lapply(1:1, function(j) {  # only 1 chain here
     idx <- sample(1:Nsim, 1)
-    list(Beta = beta_samples[,t-1, idx], sigma_sq = sigma_sq_samples[t-1, idx])
+    list(Beta = beta_samples[,t-1, idx],
+         sigma_sq = sigma_sq_samples[t-1, idx])
   })
-  run<- stan('Power Posterior Bayes Linear Regression.stan', 
-             data =  list(N=length(y),d=d, X=X, m0=m0,alpha0=alpha0,beta0=beta0, Lambda0 = Lambda0,y=y, t=power), 
-             iter =Nsim/2, 
-             init = init_list)
-  beta_samples[,t,]<- t(extract(run, pars = 'Beta')$'Beta')  
-  sigma_sq_samples[t,]<- extract(run, pars = 'sigma_sq')$'sigma_sq'  
-  for (i in 1:Nsim) {
-    E[t,i]<- sum(dnorm(y, mean = X %*% beta_samples[,t,i], sd = sqrt(sigma_sq_samples[t,i]), log = TRUE))
+  
+  run <- sampling(
+    power_model,
+    data = list(
+      N = length(y),
+      d = d,
+      X = X,
+      y = y,
+      m0 = m0,
+      Lambda0 = Lambda0,
+      alpha0 = alpha0,
+      beta0 = beta0,
+      t = power
+    ),
+    iter = N_samples_kept,
+    warmup = N_samples_warmup,
+    chains = 1,          # make sure chains = 1
+    init = init_list,
+    refresh = 0
+  )
+  
+  # Extract Beta and sigma_sq safely
+  beta_post <- extract(run, pars = "Beta")$Beta
+  if(is.null(dim(beta_post))) beta_post <- matrix(beta_post, nrow=2, ncol=1)
+  beta_samples[,t,] <- t(beta_post)
+  
+  sigma_post <- extract(run, pars = "sigma_sq")$sigma_sq
+  if(is.null(dim(sigma_post))) sigma_post <- matrix(sigma_post, nrow=1, ncol=1)
+  sigma_sq_samples[t,] <- sigma_post
+  
+  # Compute E[t,]
+  for(i in 1:Nsim){
+    E[t,i] <- sum(dnorm(y, mean = X %*% beta_samples[,t,i], sd = sqrt(sigma_sq_samples[t,i]), log = TRUE))
   }
 }
-
 
 
 #Now work out power posterior estimate of log evidence
