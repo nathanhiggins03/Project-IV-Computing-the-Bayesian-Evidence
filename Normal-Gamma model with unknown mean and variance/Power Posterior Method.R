@@ -1,3 +1,13 @@
+setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
+
+library(rstan)
+library(durhamSLR)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+prior_model <- stan_model('Prior Normal Normal with unknown mean and precision.stan')
+power_model <- stan_model('Power Posterior Normal Normal model with unknown mean and precision.stan')
+
+
 start=proc.time()
 #Normal-Gamma model with unknown mean and variance
 
@@ -42,17 +52,15 @@ N<-4000
 
 #Sample from joint prior
 
-setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
 
-library(rstan)
-library(durhamSLR)
-rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores())
-
-prior_fit = stan('Prior Normal Normal with unknown mean and precision.stan', 
-                 data = list(k0=k0, m0=m0,alpha0=alpha0,beta0=beta0), 
-                 iter =2*N, chains = 1, algorithm = "Fixed_param")
-
+prior_fit <- sampling(
+  prior_model,
+  data = list(k0=k0, m0=m0, alpha0=alpha0, beta0=beta0),
+  iter = N,
+  chains = 1,
+  algorithm = "Fixed_param",
+  refresh = 0
+)
 #Extract Prior samples
 prior_sample_mu<- extract(prior_fit, pars = 'mu')$'mu'  
 prior_sample_tau<- extract(prior_fit, pars = 'tau')$'tau'
@@ -95,12 +103,22 @@ for (i in 1:N) {
 
 
 
-
+N_samples_warmup <- 0
+N_samples_kept   <- N
 #Now need to structure calculating weights then getting new samples in loops
 for(t in 2:(T+1)){
   power<-t_list[t]
-  run<- stan('Power Posterior Normal Normal model with unknown mean and precision.stan', 
-             data =  list(x=x, N=length(x),k0=k0, m0=m0,alpha0=alpha0,beta0=beta0, t=power), iter =N/2)
+  #run<- stan('Power Posterior Normal Normal model with unknown mean and precision.stan', 
+  #           data =  list(x=x, N=length(x),k0=k0, m0=m0,alpha0=alpha0,beta0=beta0, t=power), iter =N/2)
+  run <- sampling(
+    power_model,
+    data = list(x=x, N=length(x), k0=k0, m0=m0, alpha0=alpha0, beta0=beta0, t=power),
+    iter = N_samples_kept,
+    warmup = N_samples_warmup,
+    chains = 1,
+    refresh = 0
+  )
+  
   mu_samples[t,]<- extract(run, pars = 'mu')$'mu'  
   tau_samples[t,]<- extract(run, pars = 'tau')$'tau'  
   for (i in 1:N) {
