@@ -1,3 +1,11 @@
+setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
+
+library(rstan)
+library(durhamSLR)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+prior_model <- stan_model("Prior Bayesian Linear Regression.stan")
+
 start=proc.time()
 
 #Bayesian Linear Regression with unknown beta and precision
@@ -59,17 +67,26 @@ Nsim<-20000
 
 #Sample from joint prior
 
-setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
-
-library(rstan)
-library(durhamSLR)
-rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores())
 
 #Need lots of draws for it to work
-prior_fit = stan('Prior Bayesian Linear Regression.stan', 
-                 data = list(N=length(y),d=d, X=X, m0=m0,alpha0=alpha0,beta0=beta0, Lambda0 = Lambda0), 
-                 iter =200000, chains = 1, algorithm = "Fixed_param")
+# Prior sampling
+prior_fit <- sampling(
+  prior_model,
+  data = list(
+    N = length(y),
+    d = d,
+    X = X,
+    m0 = m0,
+    Lambda0 = Lambda0,
+    alpha0 = alpha0,
+    beta0 = beta0
+  ),
+  iter = 200000,          # number of draws you want
+  chains = 1,
+  algorithm = "Fixed_param",
+  refresh = 0
+)
+
 
 #Extract Prior samples
 prior_sample_sigma_sq_all<- extract(prior_fit, pars = 'sigma_sq')$'sigma_sq'  
@@ -127,6 +144,7 @@ for(t in 2:(T+1)){
   resample_index <- sample(1:Nsim, size = Nsim, replace = TRUE, prob = w)
   beta_samples[,t, ]  <- beta_samples[,t-1, resample_index]
   sigma_sq_samples[t, ] <- sigma_sq_samples[t-1, resample_index]
+  
 }
 
 #Calculating log evidence evidence
