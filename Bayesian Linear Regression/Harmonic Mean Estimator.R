@@ -64,7 +64,7 @@ stan_data<- list(N=N,d=d, X=X, m0=m0,alpha0=alpha0,beta0=beta0, Lambda0 = Lambda
 posterior_sample <- sampling(
   posterior_model,
   data = stan_data,
-  iter = 50000,
+  iter = 100000,
   chains = 1,
   refresh = 0
 )
