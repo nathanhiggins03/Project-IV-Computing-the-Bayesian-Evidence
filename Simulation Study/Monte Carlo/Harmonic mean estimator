@@ -194,7 +194,7 @@ ggplot(df_efficiency, aes(x = mean_time, y = mc_sd)) +
   labs(
     title = "Monte Carlo efficiency - Harmonic mean estimator",
     x = "Mean runtime (seconds)",
-    y = "Monte Carlo SD of estimator"
+    y = "Monte Carlo SD"
   ) +
   coord_cartesian(xlim = c(NA, 80))+
   theme_minimal()
