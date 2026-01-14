@@ -145,7 +145,7 @@ ggplot(df_all, aes(x = MC, y = Estimate)) +
     values = c("Analytical\nvalue" = "red")
   ) +
   labs(
-    title = "Monte Carlo convergence of Harmonic mean estimator",
+    title = "Monte Carlo convergence of the Harmonic mean estimator",
     x = "N",
     y = "Log Evidence"
   ) +
@@ -190,11 +190,12 @@ df_efficiency <- left_join(df_time, df_error, by = "MC")
 ggplot(df_efficiency, aes(x = mean_time, y = mc_sd)) +
   geom_point(size = 3) +
   geom_line()+
-  geom_text(aes(label = MC), vjust = -0.8, hjust=-0.1) +
+  geom_text(aes(label = MC), vjust = 1.3, hjust=-0.1) +
   labs(
-    title = "Monte Carlo efficiency - HME",
+    title = "Monte Carlo efficiency - Harmonic mean estimator",
     x = "Mean runtime (seconds)",
     y = "Monte Carlo SD of estimator"
   ) +
+  coord_cartesian(xlim = c(NA, 80))+
   theme_minimal()
 
