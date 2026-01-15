@@ -279,3 +279,4 @@ ggplot(df_efficiency, aes(x = mean_time, y = mc_sd)) +
   ) +
   coord_cartesian(xlim = c(NA, 13.5))+
   theme_minimal()
+
