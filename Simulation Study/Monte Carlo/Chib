@@ -2,19 +2,9 @@
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(1000, 10000, 100000,1000000)    # <-- choose MC sizes
+MC_values <- c(10,100, 10000,100000)   # <-- choose MC sizes
 
 df_all <- data.frame()
-
-library(rstan)
-setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
-
-rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores())
-
-posterior_model <- stan_model(
-  file = "Posterior Bayesian Linear Regression.stan"
-)
 
 
 for (MC_sample in MC_values) {
@@ -23,13 +13,13 @@ for (MC_sample in MC_values) {
   est_simulation  <- rep(0, Sim)
   
   for (k in 1:Sim) {
-    start <- proc.time() 
-    #inlcuding STAN setup in time measurement
     
-    set.seed(123 + k)
+    start=proc.time()
     
     #Bayesian Linear Regression with unknown beta and precision
     
+    #Set seed for reproducibility
+    set.seed(123 + k)
     #Data
     #y=2+3x+ϵ,ϵ∼N(0,0.5^2)
     
@@ -59,58 +49,106 @@ for (MC_sample in MC_values) {
     betaN <- beta0 + 0.5 * (t(y) %*% y + t(m0) %*% Lambda0 %*% m0 - t(mN) %*% LambdaN %*% mN)
     
     
-    #(Log) Harmonic mean estimator
+    #Chibs Method
     
+    #First need to set up a gibbs sampler for the model. Need FCDs found by getting joint posterior up to 
+    #proportionality and getting rid of any terms that don't have beta/sigma_sq for FCD of beta/sigma_sq respectively
+    library(mvtnorm)
+    library(extraDistr)
     
-    #Sample from posterior using STAN
-    
-    #Apply MCMC to model- get posterior mu samples
-    library(rstan)
-    library(durhamSLR)
-    rstan_options(auto_write = TRUE)
-    options(mc.cores = parallel::detectCores())
-    
-    
-   # setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
-    
-    #Stan Data
-    stan_data<- list(N=N,d=d, X=X, m0=m0,alpha0=alpha0,beta0=beta0, Lambda0 = Lambda0, y=y)
-    
-    #posterior_sample <- stan(
-    #  file = "Posterior Bayesian Linear Regression.stan",
-    #  data = stan_data, iter = 2*MC_sample)
-    posterior_sample <- sampling(
-      posterior_model,
-      data = stan_data,
-      iter = 2 * MC_sample,
-      chains = 1,
-      refresh = 0
-    )
-    
-    
-    #Diagnostic checks
-    #print(posterior_sample)
-    #output = as.array(posterior_sample)
-    #diagnostics(output)
-    
-    #Extract Prior samples
-    post_sample_sigma_sq<- extract(posterior_sample, pars = 'sigma_sq')$'sigma_sq'  
-    post_sample_Beta1<- extract(posterior_sample, pars = 'Beta[1]')$'Beta[1]'
-    post_sample_Beta2<- extract(posterior_sample, pars = 'Beta[2]')$'Beta[2]'
-    post_sample_Beta<- cbind(post_sample_Beta1,post_sample_Beta2)
-    
-    #Calculate likelihood at each posterior sample of (mu,tau)
-    likelihood_log<- rep(0, length(post_sample_Beta1))
-    for(i in 1:length(post_sample_Beta1)){
-      mean<-as.vector(X %*% post_sample_Beta[i,])
-      likelihood_log[i]<- sum(dnorm(y,mean = mean, sd = sqrt(post_sample_sigma_sq[i]) , log = TRUE))
+    gibbs <- function(N,d, X,y, m0, Lambda0, alpha0, beta0) {
+      #Initialise with prior means
+      mat <- matrix(0, ncol=3, nrow=N)
+      Beta <- m0
+      sigma_sq <- beta0 / (alpha0-1)
+      mat[1,]<-c(Beta,sigma_sq)
+      
+      #FCD paramters
+      n <- length(y)
+      for (i in 2:N) {
+        LambdaN<- Lambda0 + t(X)%*%X
+        mN <- solve(LambdaN, Lambda0 %*% m0 + t(X) %*% y)
+        Beta <- as.numeric(rmvnorm(1, mean = mN, sigma = sigma_sq * solve(LambdaN)))
+        
+        alphanN<- alpha0 + (n+d)/2
+        epsilon <- y - X %*% Beta
+        betaN<- beta0 + 0.5 * (t(epsilon) %*% epsilon + t(Beta - m0) %*% Lambda0 %*% (Beta - m0))
+        sigma_sq <- rinvgamma(1, alpha = alphanN, beta = betaN) 
+        mat[i,] <- c(Beta, sigma_sq)
+      }
+      return(mat)
     }
     
-    #Calculate log harmonic mean using log sum exp trick for numerical stability
-    m<-max(likelihood_log)
-    hme_log<- log(length(post_sample_Beta1)) - log(exp(-m) * sum(exp(-likelihood_log + m)))
+    set.seed(3421)
+    out1=gibbs(N=MC_sample,d=d, X=X,y=y, m0=m0, Lambda0=Lambda0, alpha0=alpha0, beta0=beta0)
+    #Column mean
+    colMeans(out1)
+    #Compare to STAN posterior samples
+    #print(posterior_sample)
     
-    est_simulation[k]<-hme_log
+    #l(theta)
+    l_theta<- function(theta, X, y){
+      Beta<- theta[1:2]
+      sigma_sq<-theta[3]
+      mean<-X %*% Beta
+      sd <- sqrt(sigma_sq)
+      out <- sum(dnorm(y, mean = mean, sd = sd, log = TRUE)) +
+        dmvnorm(Beta, mean = m0, sigma = sigma_sq * solve(Lambda0), log = TRUE) +
+        dinvgamma(sigma_sq, alpha0, beta0, log = TRUE)
+      return(out)
+    }
+    
+    
+    #Hessian using optim function- more general as only need l_theta function
+    optimiser<- optim(par= c(2,3,0.5), fn=l_theta,X=X, y=y,hessian = TRUE,control = list(fnscale = -1))
+    #Note we can extract optimal theta(mode) from this
+    theta_mode<-optimiser$par
+    
+    #Need to continue from here
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #Now estimate log posterior at theta*
+    beta_gibbs<-out1[,1:2]
+    sigma_sq_gibbs<- out1[,3]
+    
+    #We have access to this FCD(for Beta)
+    LambdaN<- Lambda0 + t(X)%*%X
+    mN <- solve(LambdaN, Lambda0 %*% m0 + t(X) %*% y)
+    log_posterior_p1<-dmvnorm(theta_mode[1:2], mean = mN, sigma = theta_mode[3] * solve(LambdaN), log = TRUE)
+    
+    #Need to estimate this distribution using Monte Carlo using samples from FCD(gibbs samples)
+    counter<-rep(0,length(sigma_sq_gibbs))
+    for(i in 1:length(sigma_sq_gibbs)){
+      n <- length(y)
+      alphanN<- alpha0 + (n+d)/2
+      epsilon <- y - X %*% beta_gibbs[i,]
+      betaN<- beta0 + 0.5 * (t(epsilon) %*% epsilon + t(beta_gibbs[i,] - m0) %*% Lambda0 %*% (beta_gibbs[i,] - m0))
+      counter[i] <- dinvgamma(theta_mode[3], alpha = alphanN, beta = betaN, log = TRUE) 
+    }
+    # log-sum-exp trick
+    max_log <- max(counter)
+    log_posterior_p2 <- max_log + log(mean(exp(counter - max_log)))
+    
+    #Complete log posterior
+    log_posterior<- log_posterior_p1 + log_posterior_p2
+    
+    
+    #Chibs estimator
+    
+    lprior<-dmvnorm(theta_mode[1:2], mean = m0, sigma = theta_mode[3] * solve(Lambda0), log = TRUE) + dinvgamma(theta_mode[3], alpha0, beta0, log = TRUE)
+    llike<- sum(dnorm(y, mean = X %*% theta_mode[1:2], sd = sqrt(theta_mode[3]), log = TRUE))
+    
+    
+    chibs<- lprior + llike - log_posterior
+    
+    est_simulation[k]<-chibs
     
     time_simulation[k] <- (proc.time() - start)[3]
   }
@@ -145,7 +183,7 @@ ggplot(df_all, aes(x = MC, y = Estimate)) +
     values = c("Analytical\nvalue" = "red")
   ) +
   labs(
-    title = "Monte Carlo convergence of the Harmonic mean estimator",
+    title = "Monte Carlo convergence of Chib's estimator",
     x = "N",
     y = "Log Evidence"
   ) +
@@ -190,11 +228,11 @@ df_efficiency <- left_join(df_time, df_error, by = "MC")
 ggplot(df_efficiency, aes(x = mean_time, y = mc_sd)) +
   geom_point(size = 3) +
   geom_line()+
-  geom_text(aes(label = MC), vjust = 1.3, hjust=-0.1) +
+  geom_text(aes(label = MC), vjust = -0.4, hjust=-0.2) +
   labs(
-    title = "Monte Carlo efficiency - Harmonic mean estimator",
+    title = "Monte Carlo efficiency - Chib's estimator",
     x = "Mean runtime (seconds)",
     y = "Monte Carlo SD"
   ) +
-  coord_cartesian(xlim = c(NA, 80))+
+  coord_cartesian(xlim = c(NA, 20))+
   theme_minimal()
