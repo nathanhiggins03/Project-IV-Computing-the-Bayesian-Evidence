@@ -567,9 +567,9 @@ ggplot(df_compare, aes(x = Estimator, y = Estimate, fill = Estimator)) +
   theme_minimal() +
   theme(
     legend.position = "none",
-    axis.text  = element_text(size = 14, colour = "black"),
-    axis.title = element_text(size = 16, colour = "black"),
-    plot.title = element_text(size = 18, colour = "black")
+    axis.text  = element_text(size = 18, colour = "black"),
+    axis.title = element_text(size = 20, colour = "black"),
+    plot.title = element_text(size = 20, colour = "black")
   )
 
 
@@ -594,11 +594,13 @@ ggplot(df_efficiency,
     y = "Monte Carlo SD",
     colour = "Estimator"
   ) +
+  scale_x_continuous(limits = c(0, 40))+
   theme_minimal()+
   theme(
-    axis.text  = element_text(size = 14, colour = "black"),
-    axis.title = element_text(size = 16, colour = "black"),
-    plot.title = element_text(size = 18, colour = "black"),
-    legend.text  = element_text(size = 15, colour = "black"),
-    legend.title = element_text(size = 16, colour = "black")
+    legend.position = "right",
+    axis.text  = element_text(size = 18, colour = "black"),
+    axis.title = element_text(size = 20, colour = "black"),
+    plot.title = element_text(size = 20, colour = "black"),
+    legend.text  = element_text(size = 20, colour = "black"),
+    legend.title = element_text(size = 20, colour = "black")
   )
