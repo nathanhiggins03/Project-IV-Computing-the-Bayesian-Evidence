@@ -103,7 +103,7 @@ for (MC_sample in MC_values) {
     time_simulation[k] <- (proc.time() - start)[3]
   }
   
-#Store results
+  #Store results
   df_all <- rbind(
     df_all,
     data.frame(
@@ -225,5 +225,35 @@ ggplot(df_efficiency, aes(x = mean_time, y = mc_sd)) +
   ) +
   coord_cartesian(xlim = c(NA, 25))+
   theme_minimal()
+
+
+#RMSE vs mean run time
+df_rmse <- df_all %>%
+  group_by(MC) %>%
+  summarise(
+    mean_time = mean(Time),
+    rmse = sqrt(mean((Estimate - true_le)^2)),
+    .groups = "drop"
+  )
+
+ggplot(df_rmse, aes(x = mean_time, y = rmse)) +
+  geom_point(size = 3) +
+  geom_line() +
+  geom_text(
+    aes(label = MC),
+    vjust = -0.4,
+    hjust = -0.1,
+    size = 4
+  ) +
+  labs(
+    title = "Monte Carlo efficiency – Prior method",
+    x = "Mean runtime (seconds)",
+    y = "RMSE of log evidence"
+  ) +
+  coord_cartesian(xlim = c(NA, 25)) +
+  theme_minimal() +
+  theme(
+    legend.position = "none"
+  )
 
 
