@@ -1,3 +1,4 @@
+
 #Need to change to incorporate more efficient code for HME
 library(ggplot2)
 
@@ -182,7 +183,7 @@ for (T_sample in T_values) {
       Estimate = est_simulation,
       Time     = time_simulation,   # ← ADD THIS LINE
       T = factor(paste0("T = ", T_sample),
-                  levels = paste0("T = ", T_values))
+                 levels = paste0("T = ", T_values))
     )
   )
   
@@ -258,3 +259,25 @@ ggplot(df_efficiency, aes(x = mean_time, y = mc_sd)) +
   ) +
   #coord_cartesian(xlim = c(NA, 225))+
   theme_minimal()
+
+#RMSE vs mean runtime (SMC – varying number of temperatures)
+
+df_rmse <- df_all %>%
+  group_by(T) %>%
+  summarise(
+    mean_time = mean(Time),
+    rmse = sqrt(mean((Estimate - true_le)^2)),
+    .groups = "drop"
+  )
+
+ggplot(df_rmse, aes(x = mean_time, y = rmse)) +
+  geom_point(size = 3) +
+  geom_line() +
+  geom_text(aes(label = T), vjust = -0.6, hjust = 0.9) +
+  labs(
+    title = "Effect of the number of temperatures on efficiency – SMC",
+    x = "Mean runtime (seconds)",
+    y = "RMSE of log evidence"
+  ) +
+  theme_minimal()
+
