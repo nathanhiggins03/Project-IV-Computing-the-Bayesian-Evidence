@@ -1,3 +1,4 @@
+
 #Need to change to incorporate more efficient code for HME
 library(ggplot2)
 
@@ -696,6 +697,27 @@ ggplot(df_efficiency,
     title = "Monte Carlo efficiency comparison",
     x = "Mean runtime (seconds)",
     y = "Monte Carlo SD",
+    colour = "Estimator"
+  ) +
+  theme_minimal()
+
+# RMSE vs mean runtime comparison
+
+df_rmse <- df_compare %>%
+  group_by(Estimator) %>%
+  summarise(
+    mean_time = mean(Time),
+    rmse = sqrt(mean((Estimate - true_le)^2)),
+    .groups = "drop"
+  )
+
+ggplot(df_rmse,
+       aes(x = mean_time, y = rmse, colour = Estimator)) +
+  geom_point(size = 5) +
+  labs(
+    title = "Efficiency comparison",
+    x = "Mean runtime (seconds)",
+    y = "RMSE of log evidence",
     colour = "Estimator"
   ) +
   theme_minimal()
