@@ -24,7 +24,7 @@ for (MC_sample in MC_values) {
   est_simulation  <- rep(0, Sim)
   
   for (k in 1:Sim) {
-
+    
     start=proc.time()
     
     #Bayesian Linear Regression with unknown beta and precision
@@ -294,3 +294,35 @@ ggplot(df_efficiency, aes(x = mean_time, y = mc_sd)) +
   ) +
   coord_cartesian(xlim = c(NA, 50))+
   theme_minimal()
+
+
+
+#RSME vs mean run time
+
+#RMSE vs mean runtime
+df_rmse <- df_all %>%
+  group_by(MC) %>%
+  summarise(
+    mean_time = mean(Time),
+    rmse = sqrt(mean((Estimate - true_le)^2)),
+    .groups = "drop"
+  )
+
+ggplot(df_rmse, aes(x = mean_time, y = rmse)) +
+  geom_point(size = 3) +
+  geom_line() +
+  geom_text(
+    aes(label = MC),
+    vjust = -0.4,
+    hjust = -0.1
+  ) +
+  labs(
+    title = "Monte Carlo efficiency – Power posterior estimator",
+    x = "Mean runtime (seconds)",
+    y = "RMSE of log evidence"
+  ) +
+  coord_cartesian(xlim = c(NA, 50)) +
+  theme_minimal() +
+  theme(
+    legend.position = "none"
+  )
