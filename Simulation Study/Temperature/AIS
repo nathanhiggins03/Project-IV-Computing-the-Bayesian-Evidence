@@ -203,7 +203,7 @@ for (T_sample in T_values) {
       Estimate = est_simulation,
       Time     = time_simulation,   # ← ADD THIS LINE
       T = factor(paste0("T = ", T_sample),
-                  levels = paste0("T = ", T_values))
+                 levels = paste0("T = ", T_values))
     )
   )
   
@@ -278,5 +278,29 @@ ggplot(df_efficiency, aes(x = mean_time, y = mc_sd)) +
     y = "Monte Carlo SD"
   ) +
   coord_cartesian(xlim = c(NA, 13.5))+
+  theme_minimal()
+
+#RMSE vs mean run time 
+
+#RMSE vs mean runtime (AIS – varying number of temperatures)
+
+df_rmse <- df_all %>%
+  group_by(T) %>%
+  summarise(
+    mean_time = mean(Time),
+    rmse = sqrt(mean((Estimate - true_le)^2)),
+    .groups = "drop"
+  )
+
+ggplot(df_rmse, aes(x = mean_time, y = rmse)) +
+  geom_point(size = 3) +
+  geom_line() +
+  geom_text(aes(label = T), vjust = -0.5, hjust = -0.1) +
+  labs(
+    title = "Effect of the number of temperatures on efficiency - AIS",
+    x = "Mean runtime (seconds)",
+    y = "RMSE of log evidence"
+  ) +
+  coord_cartesian(xlim = c(NA, 13.5)) +
   theme_minimal()
 
