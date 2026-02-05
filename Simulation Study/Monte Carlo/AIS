@@ -141,7 +141,7 @@ for (MC_sample in MC_values) {
       power_curr <- t_list[t_index]
       power_prev <- t_list[t_index - 1]
       
-     # cat(sprintf("Running step %d of %d: t_prev=%.4f -> t_curr=%.4f\n", 
+      # cat(sprintf("Running step %d of %d: t_prev=%.4f -> t_curr=%.4f\n", 
       #           t_index - 1, T, power_prev, power_curr))
       
       
@@ -187,7 +187,7 @@ for (MC_sample in MC_values) {
     # Output Results
     #cat("\n--- AIS Results ---\n")
     #cat("Number of particles (N):", Nsim, "\n")
-   # cat("Number of steps (T):", T, "\n")
+    # cat("Number of steps (T):", T, "\n")
     #cat("Estimated Log Evidence (log Z):", AIS_log_evidence, "\n")
     # --- AIS SCRIPT END ---
     
@@ -279,3 +279,35 @@ ggplot(df_efficiency, aes(x = mean_time, y = mc_sd)) +
   ) +
   coord_cartesian(xlim = c(NA, 13.5))+
   theme_minimal()
+
+
+
+#RMSE vs mean run time
+
+#RMSE vs mean runtime
+df_rmse <- df_all %>%
+  group_by(MC) %>%
+  summarise(
+    mean_time = mean(Time),
+    rmse = sqrt(mean((Estimate - true_le)^2)),
+    .groups = "drop"
+  )
+
+ggplot(df_rmse, aes(x = mean_time, y = rmse)) +
+  geom_point(size = 3) +
+  geom_line() +
+  geom_text(
+    aes(label = MC),
+    vjust = 0.1,
+    hjust = -0.5
+  ) +
+  labs(
+    title = "Monte Carlo efficiency – AIS estimator",
+    x = "Mean runtime (seconds)",
+    y = "RMSE of log evidence"
+  ) +
+  coord_cartesian(xlim = c(NA, 18)) +
+  theme_minimal() +
+  theme(
+    legend.position = "none"
+  )
