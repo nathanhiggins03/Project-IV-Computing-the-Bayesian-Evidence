@@ -604,3 +604,37 @@ ggplot(df_efficiency,
     legend.text  = element_text(size = 20, colour = "black"),
     legend.title = element_text(size = 20, colour = "black")
   )
+
+
+
+#RMSE vs mean run time
+
+df_efficiency <- df_compare %>%
+  group_by(Estimator) %>%
+  summarise(
+    mean_time = mean(Time),
+    bias      = mean(Estimate) - true_le,
+    variance  = var(Estimate),
+    rmse      = sqrt(mean((Estimate - true_le)^2)),
+    .groups = "drop"
+  )
+
+ggplot(df_efficiency,
+       aes(x = mean_time, y = rmse, colour = Estimator)) +
+  geom_point(size = 4) +
+  labs(
+    title = "Monte Carlo efficiency comparison",
+    x = "Mean runtime (seconds)",
+    y = "RMSE of log evidence",
+    colour = "Estimator"
+  ) +
+  scale_x_continuous(limits = c(0, 25)) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    axis.text  = element_text(size = 18, colour = "black"),
+    axis.title = element_text(size = 20, colour = "black"),
+    plot.title = element_text(size = 20, colour = "black"),
+    legend.text  = element_text(size = 20, colour = "black"),
+    legend.title = element_text(size = 20, colour = "black")
+  )
