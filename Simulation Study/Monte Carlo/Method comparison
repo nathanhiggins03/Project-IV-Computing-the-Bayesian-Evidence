@@ -1180,3 +1180,27 @@ ggplot(df_efficiency,
   ) +
   theme_minimal()
 
+
+#RMSE vs mean run time
+
+
+#RMSE vs mean runtime (comparison across estimators)
+
+df_rmse <- df_compare %>%
+  group_by(Estimator) %>%
+  summarise(
+    mean_time = mean(Time),
+    rmse = sqrt(mean((Estimate - true_le)^2)),
+    .groups = "drop"
+  )
+
+ggplot(df_rmse,
+       aes(x = mean_time, y = rmse, colour = Estimator)) +
+  geom_point(size = 5) +
+  labs(
+    title = "Monte Carlo efficiency comparison",
+    x = "Mean runtime (seconds)",
+    y = "RMSE of log evidence"
+  ) +
+  theme_minimal()
+
