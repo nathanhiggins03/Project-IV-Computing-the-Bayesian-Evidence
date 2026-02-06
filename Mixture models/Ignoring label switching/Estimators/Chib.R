@@ -47,27 +47,40 @@ l_theta <- function(theta, y, K,
   ll + lp
 }
 
+make_theta_init_prior <- function(K, alpha, mu0, lambda0, a0, b0) {
+  
+  # mixture weights
+  omega <- as.numeric(rdirichlet(1, alpha))
+  eta <- log(omega[-K] / omega[K])
+  
+  # component means
+  mu <- rnorm(K, mu0, sqrt(1 / lambda0))
+  
+  # component variances
+  sigma2 <- rinvgamma(K, a0, b0)
+  
+  c(eta, mu, log(sigma2))
+}
+
 
 # Optimisation (θ*)
 #Options showing estimate depend on which mode found
-theta_init <- c(
-  rep(0, K - 1),
-  quantile(y, probs = seq(0.2, 0.8, length.out = K)),
-  rep(log(var(y)), K)
+
+#theta_init <- c(
+#  rep(0, K - 1),
+#  quantile(y, probs = seq(0.2, 0.8, length.out = K)),
+#  rep(log(var(y)), K)
+#)
+
+theta_init <- make_theta_init_prior(
+  K = K,
+  alpha = alpha,
+  mu0 = mu0,
+  lambda0 = lambda0,
+  a0 = a0,
+  b0 = b0
 )
 
-theta_init_1 <- c(
-  rep(0, K - 1),
-  sort(quantile(y, probs = seq(0.2, 0.8, length.out = K))),
-  rep(log(var(y)), K)
-)
-
-theta_init_2 <- c(
-  rep(0, K - 1),
-  rev(sort(quantile(y, probs = seq(0.2, 0.8, length.out = K)))),
-  rep(log(var(y)), K)
-)
-theta_init<-theta_init_1
 
 optimiser <- optim(
   par = theta_init,
