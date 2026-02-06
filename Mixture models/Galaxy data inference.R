@@ -79,8 +79,8 @@ sd(posterior[,,1])
 mean(posterior[,,2])
 sd(posterior[,,2])
 
-mean(posterior[,,2])
-sd(posterior[,,2])
+mean(posterior[,,3])
+sd(posterior[,,3])
 
 library(bayesplot)
 library(ggplot2)
