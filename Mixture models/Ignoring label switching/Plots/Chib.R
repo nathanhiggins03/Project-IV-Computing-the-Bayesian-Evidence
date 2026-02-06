@@ -122,12 +122,13 @@ run_chib <- function() {
 }
 
 # Run 30 simulations
-set.seed(123)
+set.seed(124)
 chib_estimates <- replicate(30, run_chib())
 
 # Plot results
 df_plot <- data.frame(Estimate = chib_estimates)
 
+#Regular
 ggplot(df_plot, aes(x = "Chib Estimates", y = Estimate)) +
   geom_violin(fill = "skyblue", alpha = 0.6) +
   geom_boxplot(width = 0.1, fill = "white", outlier.shape = NA) +
@@ -135,7 +136,7 @@ ggplot(df_plot, aes(x = "Chib Estimates", y = Estimate)) +
        x = "", y = "Log Evidence") +
   theme_minimal()
 
-
+#Log of log evidence
 ggplot(df_plot, aes(x = "Chib Estimates", y = Estimate)) +
   geom_violin(fill = "skyblue", alpha = 0.6) +
   geom_boxplot(width = 0.1, fill = "white", outlier.shape = NA) +
@@ -145,7 +146,7 @@ ggplot(df_plot, aes(x = "Chib Estimates", y = Estimate)) +
   scale_y_continuous(trans = "log10")  # log scale handles large differences
 
 library(ggbeeswarm)  # install.packages("ggbeeswarm")
-
+#Raincloud
 ggplot(df_plot, aes(x = "Chib Estimates", y = Estimate)) +
   geom_violin(fill = "skyblue", alpha = 0.4) +
   geom_quasirandom(size = 2, color = "darkblue", alpha = 0.7) +
@@ -154,7 +155,7 @@ ggplot(df_plot, aes(x = "Chib Estimates", y = Estimate)) +
 
 
 library(ggplot2)
-
+#Boxplot
 # df_plot contains 30 Chib estimates
 df_plot <- data.frame(
   Estimate = chib_estimates,
@@ -172,7 +173,7 @@ ggplot(df_plot, aes(x = "", y = Estimate)) +
   theme_minimal()
 
 library(ggplot2)
-
+#Scatterplot
 df_plot <- data.frame(
   Estimate = chib_estimates,
   Run = 1:30
