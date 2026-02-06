@@ -212,3 +212,117 @@ apply(mu_mat, 2, sd)
 #Inference with post processing data
 
 
+#Method 2: ordering mu before sampling
+
+set.seed(123)
+K <- 3   # or any K you want to test
+y<- galaxies/1000
+stan_data <- list(
+  N = length(y),
+  K = K,
+  y = y,
+  
+  alpha = rep(1, K),        # uniform Dirichlet
+  mu0 = mean(y),     # data-centered prior
+  lambda0 = 2.6/(max(y)-min(y)),           # weak prior on means
+  a0 = 1.28,                   # weak Inv-Gamma
+  b0 = 0.36*(mean(y^2) - (mean(y)^2))
+)
+
+
+library(rstan)
+
+setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
+
+library(rstan)
+library(durhamSLR)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+fit <- stan(
+  file = "Ordered Posterior Mixture model.stan",
+  data = stan_data,
+  chains = 4,
+  iter = 4000,
+  warmup = 2000
+)
+
+#Diagnostic checks
+#print(fit)
+#output = as.array(fit, pars = "mu", include = TRUE)
+#diagnostics(output)
+
+
+
+#Plots show label switching with k=3 for mu1 and mu3
+library(bayesplot)
+
+posterior <- as.array(fit, pars = "mu")
+
+# Trace plots
+#mcmc_trace(posterior)
+
+# Density plots
+#mcmc_dens(posterior)
+
+mean(posterior[,,1])
+sd(posterior[,,1])
+
+mean(posterior[,,2])
+sd(posterior[,,2])
+
+mean(posterior[,,3])
+sd(posterior[,,3])
+
+library(bayesplot)
+library(ggplot2)
+
+# Extract posterior samples for mu
+mu_array <- as.array(fit, pars = "mu")   # iterations × chains × parameters
+
+# Optional: convert to matrix for summaries
+mu_mat <- as_draws_matrix(mu_array)
+
+# Trace plots
+trace_plot <- mcmc_trace(mu_array)
+
+trace_plot +
+  facet_wrap(
+    ~ parameter,
+    labeller = as_labeller(
+      c(
+        "mu[1]" = expression(mu[1]),
+        "mu[2]" = expression(mu[2]),
+        "mu[3]" = expression(mu[3])
+      ),
+      label_parsed
+    )
+  ) +
+  labs(
+    title = expression(paste("Trace plots for ", mu, " (ordered in STAN)")),
+    x = "Iteration",
+    y = "Value"
+  )
+
+# Density plots
+mcmc_dens(
+  mu_array,
+  facet_args = list(
+    labeller = as_labeller(
+      c(
+        "mu[1]" = expression(mu[1]),
+        "mu[2]" = expression(mu[2]),
+        "mu[3]" = expression(mu[3])
+      ),
+      label_parsed
+    )
+  )
+) +
+  labs(
+    title = expression(paste("Posterior Densities for ", mu, " (ordered in STAN)")),
+    x = "Value",
+    y = "Density"
+  )
+
+# Posterior summaries
+apply(mu_mat, 2, mean)
+apply(mu_mat, 2, sd)
