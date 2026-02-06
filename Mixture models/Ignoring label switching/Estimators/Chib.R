@@ -1,6 +1,6 @@
 start <- proc.time()
 
-set.seed(123)
+
 
 
 library(extraDistr)
@@ -152,7 +152,6 @@ gibbs_mix <- function(S, y, K, alpha, mu0, lambda0, a0, b0) {
   out
 }
 
-set.seed(456)
 gibbs_out <- gibbs_mix(
   S = 5000,
   y = y,
