@@ -1,0 +1,48 @@
+# Load necessary libraries
+library(ggplot2)
+library(gridExtra)  # for arranging plots side by side
+
+# Define x values
+x <- seq(-4, 4, length.out = 200)
+
+# ---- Normal density ----
+df_density <- data.frame(
+  x = x,
+  density = dnorm(x)
+)
+
+p1 <- ggplot(df_density, aes(x, density)) +
+  geom_line(size = 1) +
+  labs(x = expression(x), y = NULL, title = "Normal Density") +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.line = element_line(),
+    axis.ticks = element_line(),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# ---- Log density ----
+log_density <- dnorm(x, log = TRUE)
+df_log <- data.frame(
+  x = x,
+  log_density = log_density
+)
+
+# Peak info
+x_peak <- 0
+y_peak <- dnorm(0, log = TRUE)
+
+p2 <- ggplot(df_log, aes(x, log_density)) +
+  geom_line(size = 1) +
+  geom_point(aes(x = x_peak, y = y_peak), color = "red", size = 2) +
+  geom_hline(yintercept = y_peak, color = "red", linetype = "dashed", size = 1) +
+  labs(x = expression(x), y = NULL, title = "Log Density") +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.line = element_line(),
+    axis.ticks = element_line(),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# ---- Arrange side by side ----
+grid.arrange(p1, p2, ncol = 2)
