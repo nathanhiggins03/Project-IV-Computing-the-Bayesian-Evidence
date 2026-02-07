@@ -10,7 +10,7 @@ mu0 <- mean(y)
 lambda0 <- 2.6 / (max(y) - min(y))
 a0 <- 1.28
 b0 <- 0.36 * (mean(y^2) - mean(y)^2)
-MC_sample <- 5000  # Gibbs sample size
+MC_sample <- 100000  # Gibbs sample size
 
 # Functions
 logsumexp <- function(x) { m <- max(x); m + log(sum(exp(x - m))) }
