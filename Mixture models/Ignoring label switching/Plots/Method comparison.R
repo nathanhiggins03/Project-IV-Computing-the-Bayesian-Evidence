@@ -1178,7 +1178,7 @@ df_compare$Estimator <- factor(
 )
 
 library(ggplot2)
-
+#Violin plots
 ggplot(df_compare, aes(x = Estimator, y = Estimate, fill = Estimator)) +
   geom_violin(trim = FALSE, alpha = 0.7) +
   geom_boxplot(width = 0.12,
@@ -1200,9 +1200,11 @@ df_efficiency <- df_compare %>%
   summarise(
     mean_time = mean(Time),
     mc_sd     = sd(Estimate),
+    mc_mean = mean(Estimate),
     .groups = "drop"
   )
 
+#Efficiency : SD vs mean run time
 ggplot(df_efficiency,
        aes(x = mean_time, y = mc_sd, colour = Estimator)) +
   geom_point(size = 4) +
@@ -1213,3 +1215,10 @@ ggplot(df_efficiency,
     colour = "Estimator"
   ) +
   theme_minimal()
+
+
+# Print mean and SD for each estimator
+df_efficiency %>%
+  select(Estimator, mc_mean, mc_sd) %>%
+  arrange(factor(Estimator, levels = c("Prior", "HME", "AIS", "Power Posterior", "SMC","Chib","Laplace")))
+
