@@ -1221,4 +1221,3 @@ ggplot(df_efficiency,
 df_efficiency %>%
   select(Estimator, mc_mean, mc_sd) %>%
   arrange(factor(Estimator, levels = c("Prior", "HME", "AIS", "Power Posterior", "SMC","Chib","Laplace")))
-
