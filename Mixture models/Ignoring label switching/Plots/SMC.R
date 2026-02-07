@@ -2,8 +2,8 @@
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(1000)  # <-- choose MC sizes
-T_value<-10
+MC_values <- c(10000)  # <-- choose MC sizes
+T_value<-20
 df_all <- data.frame()
 
 setwd("~/Desktop/Project IV")
