@@ -165,7 +165,7 @@ df_prior <- df_all   # for Prior MC
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(100000)    # <-- choose MC sizes
+MC_values <- c(10000)    # <-- choose MC sizes
 
 df_all <- data.frame()
 
@@ -327,7 +327,7 @@ mu0 <- mean(y)
 lambda0 <- 2.6 / (max(y) - min(y))
 a0 <- 1.28
 b0 <- 0.36 * (mean(y^2) - mean(y)^2)
-MC_sample <- 100000  # Gibbs sample size
+MC_sample <- 10000  # Gibbs sample size
 
 # Functions
 logsumexp <- function(x) { m <- max(x); m + log(sum(exp(x - m))) }
@@ -601,8 +601,8 @@ df_laplace <- data.frame(
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(12000)   # <-- choose MC sizes
-T_value<-20
+MC_values <- c(2000)   # <-- choose MC sizes
+T_value<-10
 df_all <- data.frame()
 
 library(rstan)
@@ -787,8 +787,8 @@ df_ais <- df_all     # for AIS
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(12000)   # <-- choose MC sizes
-T_value<-20
+MC_values <- c(2000)   # <-- choose MC sizes
+T_value<-10
 
 df_all <- data.frame()
 
@@ -986,7 +986,7 @@ df_pp <- df_all      # for TI
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(12000)  # <-- choose MC sizes
+MC_values <- c(20000)  # <-- choose MC sizes
 T_value<-20
 df_all <- data.frame()
 
@@ -1221,3 +1221,4 @@ ggplot(df_efficiency,
 df_efficiency %>%
   select(Estimator, mc_mean, mc_sd) %>%
   arrange(factor(Estimator, levels = c("Prior", "HME", "AIS", "Power Posterior", "SMC","Chib","Laplace")))
+
