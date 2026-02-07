@@ -3,7 +3,7 @@
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(3000000)   # <-- choose MC sizes
+MC_values <- c(100000)   # <-- choose MC sizes
 
 df_all <- data.frame()
 
