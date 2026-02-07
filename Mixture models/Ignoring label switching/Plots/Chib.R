@@ -122,7 +122,7 @@ run_chib <- function() {
 }
 
 # Run 30 simulations
-set.seed(124)
+
 chib_estimates <- replicate(30, run_chib())
 
 # Plot results
