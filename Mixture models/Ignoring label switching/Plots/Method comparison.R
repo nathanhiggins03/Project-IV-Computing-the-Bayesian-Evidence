@@ -1280,7 +1280,11 @@ ggplot(df_efficiency_nochib,
     y = "Monte Carlo SD",
     colour = "Estimator"
   ) +
-  theme_minimal()
+  theme_minimal()+
+  theme(
+    legend.title = element_text(size = 14),
+    legend.text  = element_text(size = 12)
+  )
 
 
 #Plots without Chib and Laplace
