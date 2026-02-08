@@ -1328,7 +1328,35 @@ ggplot(df_efficiency,
     y = "Monte Carlo SD",
     colour = "Estimator"
   ) +
-  theme_minimal()
+  theme_minimal()+
+  theme(
+    legend.title = element_text(size = 14),
+    legend.text  = element_text(size = 12)
+  )
+
+ggplot(df_compare,
+       aes(x = Estimate, y = Estimator, fill = Estimator)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(
+    title = "Comparing evidence estimators",
+    x = "Log Evidence",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+
+ggplot(df_compare,
+       aes(x = Estimate, y = Estimator, fill = Estimator)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(
+    title = "Comparing evidence estimators",
+    x = "Log Evidence",
+    y = ""
+  ) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, -200))+
+  theme(legend.position = "none")
 
 
 
@@ -1477,6 +1505,178 @@ ggplot(df_compare_nolaplace,
   theme(legend.position = "none")
 
 
+
+
+
+#Plots with correct colour for without laplace and chib
+
+all_levels <- c(
+  "Prior", "HME", "AIS",
+  "Power Posterior", "SMC",
+  "Chib", "Laplace"
+)
+
+full_pal <- scales::hue_pal()(length(all_levels))
+names(full_pal) <- all_levels
+
+
+ggplot(df_compare_nolaplace,
+       aes(x = Estimator, y = Estimate, fill = Estimator)) +
+  geom_violin(trim = FALSE, alpha = 0.7) +
+  geom_boxplot(
+    width = 0.12,
+    fill = "white",
+    outlier.shape = NA
+  ) +
+  scale_fill_manual(values = full_pal[estimators_keep]) +
+  labs(
+    title = "Comparing evidence estimators",
+    y = "Log Evidence",
+    x = ""
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+
+ggplot(df_efficiency_nolaplace,
+       aes(x = mean_time, y = mc_sd, colour = Estimator)) +
+  geom_point(size = 4) +
+  scale_colour_manual(values = full_pal[estimators_keep]) +
+  labs(
+    title = "Efficiency comparison",
+    x = "Mean runtime (seconds)",
+    y = "Monte Carlo SD",
+    colour = "Estimator"
+  ) +
+  theme_minimal()+
+  theme(
+    legend.title = element_text(size = 14),
+    legend.text  = element_text(size = 12)
+  )
+
+ggplot(df_compare_nolaplace,
+       aes(x = Estimate, y = Estimator, fill = Estimator)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = full_pal[estimators_keep]) +
+  labs(
+    title = "Comparing evidence estimators",
+    x = "Log Evidence",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+
+
+
+#Plots without Laplace
+
+estimators_keep2 <- c("Prior", "HME", "AIS", "Power Posterior", "SMC", "Chib")
+
+df_compare_nolaplace2 <- df_compare %>%
+  filter(Estimator %in% estimators_keep2) %>%
+  mutate(
+    Estimator = factor(Estimator, levels = estimators_keep2)
+  )
+
+ggplot(df_compare_nolaplace2,
+       aes(x = Estimator, y = Estimate, fill = Estimator)) +
+  geom_violin(trim = FALSE, alpha = 0.7) +
+  geom_boxplot(
+    width = 0.12,
+    fill = "white",
+    outlier.shape = NA
+  ) +
+  labs(
+    title = "Comparing evidence estimators",
+    y = "Log Evidence",
+    x = ""
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+df_efficiency_nolaplace2 <- df_compare_nolaplace2 %>%
+  group_by(Estimator) %>%
+  summarise(
+    mean_time = mean(Time),
+    mc_sd     = sd(Estimate),
+    mc_mean   = mean(Estimate),
+    .groups   = "drop"
+  )
+
+ggplot(df_efficiency_nolaplace2,
+       aes(x = mean_time, y = mc_sd, colour = Estimator)) +
+  geom_point(size = 4) +
+  labs(
+    title = "Efficiency comparison",
+    x = "Mean runtime (seconds)",
+    y = "Monte Carlo SD",
+    colour = "Estimator"
+  ) +
+  theme_minimal()
+
+
+
+
+
+# get default ggplot discrete palette
+levs <- levels(factor(df_efficiency_nolaplace2$Estimator))
+pal  <- scales::hue_pal()(length(levs))
+names(pal) <- levs
+
+# override only chib
+pal["Chib"] <- "#C77CFF"
+  # ggplot default purple
+
+ggplot(df_efficiency_nolaplace2,
+       aes(x = mean_time, y = mc_sd, colour = Estimator)) +
+  geom_point(size = 4) +
+  scale_colour_manual(values = pal) +
+  labs(
+    title = "Efficiency comparison",
+    x = "Mean runtime (seconds)",
+    y = "Monte Carlo SD",
+    colour = "Estimator"
+  ) +
+  theme_minimal()
+
+
+
+
+
+
+
+#Boxplots
+#ggplot(df_compare_nolaplace2,
+#       aes(x = Estimator, y = Estimate, fill = Estimator)) +
+#  geom_boxplot(
+#    alpha = 0.7,
+#    width = 0.6,
+#    outlier.shape = 16
+#  ) +
+#  labs(
+#    title = "Comparing Evidence Estimators",
+#    y = "Log Evidence",
+#    x = ""
+#  ) +
+#  theme_minimal() +
+#  theme(legend.position = "none")
+
+
+ggplot(df_compare_nolaplace2,
+       aes(x = Estimate, y = Estimator, fill = Estimator)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(
+    title = "Comparing evidence estimators",
+    x = "Log Evidence",
+    y = ""
+  ) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(NA, -200))+
+  theme(legend.position = "none")
+
+
+
 df_laplace <- df_compare %>% 
   filter(Estimator == "Laplace")
 
@@ -1511,6 +1711,7 @@ ggplot(df_chib,
     y = "Log Evidence",
     x = ""
   ) +
+  #coord_cartesian(xlim = c(NA, -200))+
   coord_flip() +
   theme_minimal()
 
