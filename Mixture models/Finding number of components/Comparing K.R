@@ -6,6 +6,7 @@ library(ggplot2)
 Sim <- 30
 K_values <- c(3,4,5,6,8,11)
 
+
 N_lookup <- c(
   `3`  = 2000,
   `4`  = 2000,
@@ -425,7 +426,7 @@ for (K in K_values) {
 df_pp <- df_all      # for TI
 
 
-
+#RUN FROM HERE ONCE AIS COMPLETE.
 
 library(dplyr)
 
@@ -437,14 +438,22 @@ df_compare <- bind_rows(
   df_pp
 )
 
+#Update row which had error (rurun with same seed):
+#df_compare[335, c("Estimate", "Time")] <- c(-227.8249, 852.42)
+
 df_compare$Estimator <- factor(
   df_compare$Estimator,
   levels = c("AIS", "Power Posterior")
 )
 
+#RUN HERE FOR SAVED DATA:
+setwd("~/Desktop/Project IV")
+#write.csv(df_compare, file = "kComponentData.csv", quote=FALSE, row.names=FALSE)
+#df_compare = read.csv("kComponentData.csv", header=TRUE)
+
 ggplot(
   subset(df_compare, Estimator == "AIS"),
-  aes(x = K, y = Estimate)
+  aes(x = K, y = Estimate, fill = K)
 ) +
   geom_boxplot() +
   labs(
@@ -456,7 +465,7 @@ ggplot(
 
 ggplot(
   subset(df_compare, Estimator == "Power Posterior"),
-  aes(x = K, y = Estimate)
+  aes(x = K, y = Estimate, fill= K)
 ) +
   geom_boxplot() +
   labs(
@@ -464,11 +473,13 @@ ggplot(
     x = "K",
     y = "Log evidence"
   ) +
-  theme_minimal()
+  theme_minimal()+
+  coord_cartesian(ylim = c(-228.5, NA))
 
 df_efficiency <- df_compare %>%
   group_by(K, Estimator) %>%
   summarise(
+    mean_estimate = mean(Estimate),
     mean_time = mean(Time),
     mc_sd     = sd(Estimate),
     .groups = "drop"
@@ -477,8 +488,8 @@ df_efficiency <- df_compare %>%
 ggplot(df_efficiency,
        aes(x = mean_time,
            y = mc_sd,
-           colour = Estimator,
-           shape = K)) +
+           colour = K,
+           shape = Estimator)) +
   geom_point(size = 4) +
   labs(
     title = "Efficiency comparison",
