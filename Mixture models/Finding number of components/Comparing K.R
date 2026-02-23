@@ -498,6 +498,26 @@ ggplot(df_efficiency,
   ) +
   theme_minimal()
 
+library(dplyr)
+library(tidyr)
+
+df_model_probs <- df_efficiency %>%
+  select(K, Estimator, mean_estimate) %>%
+  pivot_wider(names_from = Estimator,
+              values_from = mean_estimate) %>%
+  mutate(
+    avg_log_evidence = (AIS + `Power Posterior`) / 2
+  ) %>%
+  # log-sum-exp trick
+  mutate(
+    max_log = max(avg_log_evidence),
+    log_sum_exp = max_log + log(sum(exp(avg_log_evidence - max_log))),
+    posterior_model_prob = exp(avg_log_evidence - log_sum_exp)
+  ) %>%
+  select(K, avg_log_evidence, posterior_model_prob)
+
+df_model_probs
+
 
 
 
