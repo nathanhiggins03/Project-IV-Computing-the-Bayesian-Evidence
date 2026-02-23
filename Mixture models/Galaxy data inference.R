@@ -13,7 +13,7 @@ ggplot(data.frame(y), aes(x = y)) +
                  color = "black") +
   labs(
     title = "Galaxy velocities",
-    x = "Velocity (km/s)",
+    x = "Velocity (1000 km/s)",
     y = "Density"
   ) +
   theme_minimal()
