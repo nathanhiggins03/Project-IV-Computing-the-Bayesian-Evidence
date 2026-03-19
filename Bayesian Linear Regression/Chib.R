@@ -63,7 +63,7 @@ gibbs <- function(N,d, X,y, m0, Lambda0, alpha0, beta0) {
   return(mat)
 }
 
-set.seed(3421)
+#set.seed(3421)
 out1=gibbs(N=5000,d=d, X=X,y=y, m0=m0, Lambda0=Lambda0, alpha0=alpha0, beta0=beta0)
 #Column mean
 colMeans(out1)
