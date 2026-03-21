@@ -1,4 +1,6 @@
+#UPDATE SMC WITH NEW T AND GENERAL NEW CHANGES AS WELL
 #Need to change to incorporate more efficient code for HME
+
 library(ggplot2)
 
 Sim <- 30
@@ -211,7 +213,7 @@ for (MC_sample in MC_values) {
     # Output Results
     cat("\n--- AIS Results ---\n")
     cat("Number of particles (N):", Nsim, "\n")
-     cat("Number of steps (T):", T, "\n")
+    cat("Number of steps (T):", T, "\n")
     cat("Estimated Log Evidence (log Z):", AIS_log_evidence, "\n")
     # --- AIS SCRIPT END ---
     
@@ -367,7 +369,7 @@ ggplot(df_rmse, aes(x = mean_time, y = rmse)) +
     x = "Mean runtime (seconds)",
     y = "RMSE of log evidence"
   ) +
-  coord_cartesian(xlim = c(NA, 45)) +
+  coord_cartesian(xlim = c(NA, 100)) +
   theme_minimal() +
   theme(
     legend.position = "none"
