@@ -74,7 +74,7 @@ for (MC_sample in MC_values) {
     
     
     # AIS Parameters
-    T <- 10             # Number of tempered distributions 
+    T <- 25             # Number of tempered distributions 
     Nsim <- MC_sample           # Number of AIS particles/samples
     c_power <- 2        # Power schedule exponent
     
