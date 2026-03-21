@@ -93,8 +93,9 @@ log_w[1,] <- 0
 # AIS MAIN LOOP
 
 # Define the extended mixing parameters
-N_samples_kept <- N          # 2000 samples kept (for weight calculation)
-N_samples_warmup <- 4000     # 4000 iterations for warmup
+#N_samples_kept <- N          # 2000 samples kept (for weight calculation)
+#N_samples_warmup <- 4000     # 4000 iterations for warmup
+
 
 for(t_index in 2:(T+1)){
   power_curr <- t_list[t_index]
@@ -103,35 +104,45 @@ for(t_index in 2:(T+1)){
   cat(sprintf("Running step %d of %d: t_prev=%.4f -> t_curr=%.4f\n", 
               t_index - 1, T, power_prev, power_curr))
   
-  
-  # 1. Setup warm-start initialisation using the last particle from the previous step.
-  init_list <- list(list(mu = mu_samples[t_index - 1, N] , tau = tau_samples[t_index - 1, N]))
-  
-  # 2. Run MCMC
-  run <- sampling(stan_model_obj, 
-                  data = list(x=x, N=length(x), k0=k0, m0=m0, alpha0=alpha0, beta0=beta0, t=power_curr), 
-                  iter = N_samples_warmup + N_samples_kept, # Total 6000 iterations
-                  warmup = N_samples_warmup,                # 4000 warmup iterations
-                  chains = 1,        
-                  init = init_list,  
-                  refresh = 0)
-  
-  # 3. Extract new samples theta_t
-  # The 'extract' function automatically returns the N_samples_kept iterations
-  mu_samples[t_index,] <- extract(run, pars = 'mu')$'mu' 	
-  tau_samples[t_index,] <- extract(run, pars = 'tau')$'tau' 	
-  
   for (i in 1:N) {
-    theta_prev <- c(mu_samples[t_index - 1, i], tau_samples[t_index - 1, i])
     
-    # log(p_t/p_{t-1}) = log p_t - log p_{t-1}
+    # Previous particle (this is now a TRUE AIS trajectory)
+    theta_prev <- c(mu_samples[t_index - 1, i], 
+                    tau_samples[t_index - 1, i])
+    
+    # ---- 1. Weight update (UNCHANGED) ----
     log_w_curr <- power_post_log(power_curr, theta_prev, x, m0, k0, alpha0, beta0)
     log_w_prev <- power_post_log(power_prev, theta_prev, x, m0, k0, alpha0, beta0)
     
     log_w[t_index, i] <- log_w[t_index - 1, i] + (log_w_curr - log_w_prev)
+    
+    # ---- 2. ONE Metropolis–Hastings step ----
+    
+    mu <- theta_prev[1]
+    tau <- theta_prev[2]
+    
+    # Propose new state
+    mu_prop <- rnorm(1, mu, 0.5)
+    tau_prop <- abs(rnorm(1, tau, 0.1))  # keep tau > 0
+    
+    theta_prop <- c(mu_prop, tau_prop)
+    
+    # Compute log densities at current temperature
+    log_curr <- power_post_log(power_curr, theta_prev, x, m0, k0, alpha0, beta0)
+    log_prop <- power_post_log(power_curr, theta_prop, x, m0, k0, alpha0, beta0)
+    
+    # Accept / reject
+    if (log(runif(1)) < (log_prop - log_curr)) {
+      theta_new <- theta_prop
+    } else {
+      theta_new <- theta_prev
+    }
+    
+    # Store updated particle
+    mu_samples[t_index, i] <- theta_new[1]
+    tau_samples[t_index, i] <- theta_new[2]
   }
 }
-
 
 # The final estimate is log(E_i[w_i]) using Log-Sum-Exp for stability.
 
