@@ -17,6 +17,44 @@ prior_model <- stan_model(
   'Prior Bayesian Linear Regression.stan'
 )
 
+#Data
+set.seed(123)
+#y=2+3x+ϵ,ϵ∼N(0,0.5^2)
+N <- 30
+x <- runif(N, 0, 5)
+X <- cbind(1, x)   # include intercept
+beta_true <- c(2, 3)
+sigma_true <- 0.5
+y <- as.vector(X %*% beta_true + rnorm(N, 0, sigma_true))
+
+#Data we have is
+X
+y
+
+#Prior inputs
+d <- ncol(X)
+m0 <- rep(1, d)
+Lambda0 <- diag(5, d)   # vague prior
+alpha0 <- 3
+beta0  <- 36
+
+
+#Posterior distribution inputs
+LambdaN <- Lambda0 + t(X) %*% X
+mN <- solve(LambdaN, Lambda0 %*% m0 + t(X) %*% y)
+alphaN <- alpha0 + N / 2
+betaN <- beta0 + 0.5 * (t(y) %*% y + t(m0) %*% Lambda0 %*% m0 - t(mN) %*% LambdaN %*% mN)
+
+#True value
+#Analytical log evidence
+
+term1 <- as.numeric(0.5 * (determinant(Lambda0, log = TRUE)$modulus - determinant(LambdaN, log = TRUE)$modulus))
+term2 <- alpha0 * log(beta0) - alphaN * log(betaN)
+term3 <- log(gamma(alphaN)) - log(gamma(alpha0))
+term4 <- -(N/2) * log(2*pi)
+true_le<- term1 + term2 + term3 + term4
+true_le
+
 for (T_sample in T_values) {
   
   time_simulation <- rep(0, Sim)
@@ -32,41 +70,9 @@ for (T_sample in T_values) {
     library(mvtnorm)
     library(extraDistr)
     
-    
-    # --- 1. DATA, PRIORS, and HYPERPARAMETERS ---
-    
-    #Data
-    #y=2+3x+ϵ,ϵ∼N(0,0.5^2)
-    
-    N <- 30
-    x <- runif(N, 0, 5)
-    X <- cbind(1, x)   # include intercept
-    beta_true <- c(2, 3)
-    sigma_true <- 0.5
-    y <- as.vector(X %*% beta_true + rnorm(N, 0, sigma_true))
-    
-    #Data we have is
-    X
-    y
-    
-    #Prior inputs
-    d <- ncol(X)
-    m0 <- rep(1, d)
-    Lambda0 <- diag(5, d)   # vague prior
-    alpha0 <- 3
-    beta0  <- 36
-    
-    
-    #Posterior distribution inputs
-    LambdaN <- Lambda0 + t(X) %*% X
-    mN <- solve(LambdaN, Lambda0 %*% m0 + t(X) %*% y)
-    alphaN <- alpha0 + N / 2
-    betaN <- beta0 + 0.5 * (t(y) %*% y + t(m0) %*% Lambda0 %*% m0 - t(mN) %*% LambdaN %*% mN)
-    
-    
     # AIS Parameters
     T <- T_sample             # Number of tempered distributions 
-    Nsim <- 500           # Number of AIS particles/samples
+    Nsim <- 1000           # Number of AIS particles/samples
     c_power <- 2        # Power schedule exponent
     
     
@@ -89,7 +95,30 @@ for (T_sample in T_values) {
     }
     t_list <- Beta_t(0:T) # T+1 tempered posteriors
     
-    
+    mh_step <- function(theta, beta_temp, X, y, m0, Lambda0, alpha0, beta0) {
+      Beta <- theta[1:2]
+      sigma_sq <- theta[3]
+      
+      # Proposals
+      Beta_prop <- Beta + rnorm(2, 0, 0.2)
+      sigma_sq_prop <- sigma_sq * exp(rnorm(1, 0, 0.1))
+      
+      theta_prop <- c(Beta_prop, sigma_sq_prop)
+      
+      # Log densities
+      log_curr <- power_post_log(beta_temp, theta, X, y)
+      log_prop <- power_post_log(beta_temp, theta_prop, X, y)
+      
+      # Log-scale correction
+      log_accept_ratio <- (log_prop - log_curr) +
+        log(sigma_sq_prop) - log(sigma_sq)
+      
+      if (log(runif(1)) < log_accept_ratio) {
+        return(theta_prop)
+      } else {
+        return(theta)
+      }
+    }
     
     
     # Sample from joint prior to initialise the arrays
@@ -141,34 +170,28 @@ for (T_sample in T_values) {
       power_curr <- t_list[t_index]
       power_prev <- t_list[t_index - 1]
       
-      # cat(sprintf("Running step %d of %d: t_prev=%.4f -> t_curr=%.4f\n", 
-      #           t_index - 1, T, power_prev, power_curr))
-      
-      
-      # 1. Setup warm-start initialisation using the last particle from the previous step.
-      init_list <- list(list(Beta = beta_samples[,t_index-1, Nsim], sigma_sq = sigma_sq_samples[t_index-1, Nsim]))
-      
-      # 2. Run MCMC
-      run <- sampling(stan_model_obj, 
-                      data = list(N=length(y),d=d, X=X, m0=m0,alpha0=alpha0,beta0=beta0, Lambda0 = Lambda0,y=y, t=power_curr), 
-                      iter = N_samples_warmup + N_samples_kept, # Total 6000 iterations
-                      warmup = N_samples_warmup,                # 4000 warmup iterations
-                      chains = 1,        
-                      init = init_list,  
-                      refresh = 0)
-      
-      # 3. Extract new samples theta_t
-      # The 'extract' function automatically returns the N_samples_kept iterations
-      beta_samples[,t_index,]<- t(extract(run, pars = 'Beta')$'Beta')  
-      sigma_sq_samples[t_index,]<- extract(run, pars = 'sigma_sq')$'sigma_sq' 	
-      
       for (i in 1:Nsim) {
-        theta_prev <- c(beta_samples[,t_index - 1, i], sigma_sq_samples[t_index - 1, i])
-        # log(p_t/p_{t-1}) = log p_t - log p_{t-1}
-        log_w_curr <- power_post_log(power_curr, theta_prev, X,y)
-        log_w_prev <- power_post_log(power_prev, theta_prev, X,y)
+        
+        theta_prev <- c(beta_samples[,t_index - 1, i], 
+                        sigma_sq_samples[t_index - 1, i])
+        
+        # ---- 1. Weight update (UNCHANGED) ----
+        log_w_curr <- power_post_log(power_curr, theta_prev, X, y)
+        log_w_prev <- power_post_log(power_prev, theta_prev, X, y)
         
         log_w[t_index, i] <- log_w[t_index - 1, i] + (log_w_curr - log_w_prev)
+        
+        # ---- 2. MH transitions (NEW, replaces Stan) ----
+        theta_tmp <- theta_prev
+        
+        # Do multiple MH steps for better mixing
+        for (s in 1:3) {
+          theta_tmp <- mh_step(theta_tmp, power_curr, X, y, m0, Lambda0, alpha0, beta0)
+        }
+        
+        # Store updated particle
+        beta_samples[,t_index, i] <- theta_tmp[1:2]
+        sigma_sq_samples[t_index, i] <- theta_tmp[3]
       }
     }
     
@@ -185,10 +208,10 @@ for (T_sample in T_values) {
     AIS_log_evidence <- m + log(mean(exp(final_log_weights - m)))
     
     # Output Results
-    #cat("\n--- AIS Results ---\n")
-    #cat("Number of particles (N):", Nsim, "\n")
-    # cat("Number of steps (T):", T, "\n")
-    #cat("Estimated Log Evidence (log Z):", AIS_log_evidence, "\n")
+    cat("\n--- AIS Results ---\n")
+    cat("Number of particles (N):", Nsim, "\n")
+     cat("Number of steps (T):", T, "\n")
+    cat("Estimated Log Evidence (log Z):", AIS_log_evidence, "\n")
     # --- AIS SCRIPT END ---
     
     est_simulation[k]<-AIS_log_evidence
@@ -208,7 +231,6 @@ for (T_sample in T_values) {
   )
   
 }
-
 
 #Plotting evidence violin plots against MC sample size
 ggplot(df_all, aes(x = T, y = Estimate)) +
@@ -301,6 +323,5 @@ ggplot(df_rmse, aes(x = mean_time, y = rmse)) +
     x = "Mean runtime (seconds)",
     y = "RMSE of log evidence"
   ) +
-  coord_cartesian(xlim = c(NA, 13.5)) +
+  coord_cartesian(xlim = c(NA, 80)) +
   theme_minimal()
-
