@@ -425,7 +425,7 @@ for (MC_sample in MC_values) {
     library(extraDistr)
     
     # AIS Parameters
-    T <- 10             # Number of tempered distributions 
+    T <- 25             # Number of tempered distributions 
     Nsim <- MC_sample           # Number of AIS particles/samples
     c_power <- 2        # Power schedule exponent
     
@@ -682,7 +682,7 @@ for (MC_sample in MC_values) {
     
     
     #T is number of tempered distributions
-    T<- 10
+    T<- 25
     #N is number of (gibbs) samples for each tempered distribution
     Nsim<-MC_sample
     
@@ -841,7 +841,7 @@ for (MC_sample in MC_values) {
     }
     
     #T is number of tempered distributions
-    T<- 10
+    T<- 25
     
     #N is number of (gibbs) samples for each tempered distribution
     Nsim<-MC_sample
@@ -1076,7 +1076,7 @@ ggplot(df_chib_only, aes(x = Estimator, y = Estimate, fill = Estimator)) +
 ggplot(df_compare, aes(x = Estimator, y = Estimate, fill = Estimator)) +
   geom_violin(trim = FALSE, alpha = 0.7, scale="width") +
   geom_boxplot(width = 0.15,
-               size= 0.7,
+               size= 0.6,
                fill = "white",
                outlier.shape = NA) +
   geom_hline(yintercept = true_le,
