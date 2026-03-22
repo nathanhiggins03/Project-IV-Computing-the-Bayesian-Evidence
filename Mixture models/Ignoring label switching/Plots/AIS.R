@@ -1,3 +1,5 @@
+#OLD VERSION - IGNORE - SEE METHOD COMPARISON CODE FOR ACTUAL IMPLEMENTATION
+
 #Need to change to incorporate more efficient code for HME
 library(ggplot2)
 
