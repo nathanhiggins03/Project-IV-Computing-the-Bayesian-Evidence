@@ -292,7 +292,7 @@ ggplot(df_rmse, aes(x = mean_time, y = rmse)) +
     x = "Mean runtime (seconds)",
     y = "RMSE of log evidence"
   ) +
-  coord_cartesian(xlim = c(NA, 275)) +
+  coord_cartesian(xlim = c(NA, 60)) +
   theme_minimal() +
   theme(
     legend.position = "none"
