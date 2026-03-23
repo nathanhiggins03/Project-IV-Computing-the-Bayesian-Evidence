@@ -1,3 +1,6 @@
+
+#SAVE DATA TO CSV ONCE RUN!!!!
+
 #Prior method
 
 library(ggplot2)
@@ -598,26 +601,26 @@ df_laplace <- data.frame(
 #AIS
 
 #Need to change to incorporate more efficient code for HME
+#AIS
+
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(2000)   # <-- choose MC sizes
-T_value<-10
+MC_values <- c(4000)
+T_value <- 50
+
 df_all <- data.frame()
 
 library(rstan)
-
+library(extraDistr)
 
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
 setwd("~/Desktop/Project IV")
 
-# Compile Stan models
-
+# Compile prior model ONLY (no pp_model needed anymore)
 prior_model <- stan_model("Prior Mixture model.stan")
-pp_model <- stan_model("Power Posterior Mixture model.stan")
-
 
 for (MC_sample in MC_values) {
   
@@ -626,18 +629,16 @@ for (MC_sample in MC_values) {
   
   for (k in 1:Sim) {
     
-    start=proc.time()
-    set.seed(123+k)
+    start = proc.time()
+    set.seed(123 + k)
     
     # Data
-    
     data(galaxies, package = "MASS")
     y <- galaxies / 1000
     N <- length(y)
     K <- 3
     
     # Priors
-    
     alpha <- rep(1, K)
     mu0 <- mean(y)
     lambda0 <- 2.6 / (max(y) - min(y))
@@ -645,7 +646,6 @@ for (MC_sample in MC_values) {
     b0 <- 0.36 * (mean(y^2) - mean(y)^2)
     
     # AIS parameters
-    
     T <- T_value
     Nsim <- MC_sample
     c_power <- 2
@@ -653,13 +653,17 @@ for (MC_sample in MC_values) {
     Beta_t <- function(t) (t / T)^c_power
     t_list <- Beta_t(0:T)
     
-    
-    # 1. Sample from prior
-    
+    # ---- Sample from prior ----
     prior_fit <- sampling(
       prior_model,
-      data = list(K = K, alpha = alpha, mu0 = mu0,
-                  lambda0 = lambda0, a0 = a0, b0 = b0),
+      data = list(
+        K = K,
+        alpha = alpha,
+        mu0 = mu0,
+        lambda0 = lambda0,
+        a0 = a0,
+        b0 = b0
+      ),
       iter = Nsim,
       chains = 1,
       algorithm = "Fixed_param",
@@ -676,24 +680,71 @@ for (MC_sample in MC_values) {
     
     log_w <- matrix(0, nrow = T + 1, ncol = Nsim)
     
-    # Mixture log-likelihood
-    
+    # ---- Mixture log-likelihood ----
     mix_loglik <- function(y, omega, mu, sigma2) {
       ll <- 0
       for (n in seq_along(y)) {
         log_terms <- log(omega) +
           dnorm(y[n], mu, sqrt(sigma2), log = TRUE)
-        ll <- ll + log(sum(exp(log_terms - max(log_terms)))) +
-          max(log_terms)
+        m <- max(log_terms)
+        ll <- ll + m + log(sum(exp(log_terms - m)))
       }
       ll
     }
     
+    # ---- Helpers for MH ----
     
+    omega_to_eta <- function(omega) log(omega[-K] / omega[K])
     
-    #AIS loop
+    eta_to_omega <- function(eta) {
+      eta_full <- c(eta, 0)
+      exp_eta <- exp(eta_full - max(eta_full))
+      exp_eta / sum(exp_eta)
+    }
     
-    warmup <- 3000
+    log_prior <- function(omega, mu, sigma2) {
+      ddirichlet(omega, alpha, log = TRUE) +
+        sum(dnorm(mu, mu0, sqrt(sigma2 / lambda0), log = TRUE)) +
+        sum(dinvgamma(sigma2, a0, b0, log = TRUE))
+    }
+    
+    log_power_post <- function(omega, mu, sigma2, t) {
+      t * mix_loglik(y, omega, mu, sigma2) +
+        log_prior(omega, mu, sigma2)
+    }
+    
+    # Proposal scales (tune if needed)
+    rw_sd_mu <- 0.2
+    rw_sd_logsigma2 <- 0.15
+    rw_sd_eta <- 0.2
+    
+    # ---- NEW: MH step function ----
+    
+    mh_step <- function(omega, mu, sigma2, t_curr) {
+      
+      eta_curr <- omega_to_eta(omega)
+      eta_prop <- eta_curr + rnorm(K - 1, 0, rw_sd_eta)
+      omega_prop <- eta_to_omega(eta_prop)
+      
+      mu_prop <- mu + rnorm(K, 0, rw_sd_mu)
+      
+      log_sigma2_curr <- log(sigma2)
+      log_sigma2_prop <- log_sigma2_curr + rnorm(K, 0, rw_sd_logsigma2)
+      sigma2_prop <- exp(log_sigma2_prop)
+      
+      log_acc <- log_power_post(omega_prop, mu_prop, sigma2_prop, t_curr) -
+        log_power_post(omega, mu, sigma2, t_curr)
+      
+      if (log(runif(1)) < log_acc) {
+        return(list(omega = omega_prop, mu = mu_prop, sigma2 = sigma2_prop))
+      } else {
+        return(list(omega = omega, mu = mu, sigma2 = sigma2))
+      }
+    }
+    
+    # ---- AIS loop with MULTIPLE MH STEPS ----
+    
+    n_mh_steps <- 3   # <-- only real change
     
     for (t_idx in 2:(T + 1)) {
       
@@ -703,48 +754,42 @@ for (MC_sample in MC_values) {
       cat(sprintf("AIS step %d / %d  (%.3f → %.3f)\n",
                   t_idx - 1, T, t_prev, t_curr))
       
-      init <- list(list(
-        omega  = omega_store[t_idx - 1, Nsim, ],
-        mu     = mu_store[t_idx - 1, Nsim, ],
-        sigma2 = sigma2_store[t_idx - 1, Nsim, ]
-      ))
-      
-      fit <- sampling(
-        pp_model,
-        data = list(
-          N = N, K = K, y = y,
-          alpha = alpha,
-          mu0 = mu0,
-          lambda0 = lambda0,
-          a0 = a0,
-          b0 = b0,
-          t = t_curr
-        ),
-        iter = warmup + Nsim,
-        warmup = warmup,
-        chains = 1,
-        init = init,
-        refresh = 0
-      )
-      
-      omega_store[t_idx,,]  <- extract(fit, "omega")$omega
-      mu_store[t_idx,,]     <- extract(fit, "mu")$mu
-      sigma2_store[t_idx,,] <- extract(fit, "sigma2")$sigma2
-      
       for (i in 1:Nsim) {
+        
+        # Current state
+        omega_curr  <- omega_store[t_idx - 1, i, ]
+        mu_curr     <- mu_store[t_idx - 1, i, ]
+        sigma2_curr <- sigma2_store[t_idx - 1, i, ]
+        
+        # ---- Weight update (UNCHANGED) ----
+        
         ll <- mix_loglik(
           y,
           omega_store[t_idx - 1, i, ],
           mu_store[t_idx - 1, i, ],
           sigma2_store[t_idx - 1, i, ]
         )
+        
         log_w[t_idx, i] <- log_w[t_idx - 1, i] +
           (t_curr - t_prev) * ll
+        
+        # ---- NEW: MULTI-STEP MH ----
+        
+        for (s in 1:n_mh_steps) {
+          out <- mh_step(omega_curr, mu_curr, sigma2_curr, t_curr)
+          omega_curr  <- out$omega
+          mu_curr     <- out$mu
+          sigma2_curr <- out$sigma2
+        }
+        
+        # Store new state
+        omega_store[t_idx, i, ]  <- omega_curr
+        mu_store[t_idx, i, ]     <- mu_curr
+        sigma2_store[t_idx, i, ] <- sigma2_curr
       }
     }
     
-    
-    #Log marginal likelihood
+    # ---- Log evidence ----
     
     final_log_w <- log_w[T + 1, ]
     m <- max(final_log_w)
@@ -752,33 +797,23 @@ for (MC_sample in MC_values) {
     
     cat("\nEstimated log marginal likelihood:", logZ, "\n")
     
-    est_simulation[k]<-logZ
-    
+    est_simulation[k] <- logZ
     time_simulation[k] <- (proc.time() - start)[3]
-    
-    
-    #Important to note in report that we can't do trick in calculating weights
-    #seen on page 18 as priors don't cancel in a mixture as it is a sum
-    #hence have to caclculate weights using general formula in AIS algorithm
-    #This is main calculation change for AIS
   }
   
-  #Store results
+  # Store results
   df_all <- rbind(
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
   )
-  
 }
 
-
-
-df_ais <- df_all     # for AIS
+df_ais <- df_all
 
 
 #Power posterior
@@ -1177,7 +1212,20 @@ df_compare$Estimator <- factor(
   levels = c("Prior", "HME", "AIS", "Power Posterior", "SMC","Chib","Laplace")
 )
 
-#library(ggplot2)
+
+#RUN HERE FOR SAVED DATA:
+setwd("~/Desktop/Project IV")
+#write.csv(df_compare, file = "ILSData.csv", quote=FALSE, row.names=FALSE)
+df_compare = read.csv("ILSData.csv", header=TRUE)
+
+library(dplyr)
+
+library(ggplot2)
+
+df_compare$Estimator <- factor(
+  df_compare$Estimator,
+  levels = c("Prior", "HME", "AIS", "Power Posterior", "SMC","Chib","Laplace")
+)
 #Violin plots
 #ggplot(df_compare, aes(x = Estimator, y = Estimate, fill = Estimator)) +
 #  geom_violin(trim = FALSE, alpha = 0.7) +
@@ -1216,14 +1264,30 @@ ggplot(df_efficiency,
   ) +
   theme_minimal()
 
+# Filter out Chib and AIS
+df_efficiency_no_extreme <- df_efficiency %>%
+  filter(!Estimator %in% c("Chib", "AIS"))
+
+# Plot without Chib and AIS
+ggplot(df_efficiency_no_extreme,
+       aes(x = mean_time, y = mc_sd, colour = Estimator)) +
+  geom_point(size = 4) +
+  labs(
+    title = "Efficiency comparison (excluding Chib & AIS)",
+    x = "Mean runtime (seconds)",
+    y = "Monte Carlo SD",
+    colour = "Estimator"
+  ) +
+  theme_minimal()
+
 
 
 
 
 # Print mean and SD for each estimator
-df_efficiency %>%
-  select(Estimator, mc_mean, mc_sd) %>%
-  arrange(factor(Estimator, levels = c("Prior", "HME", "AIS", "Power Posterior", "SMC","Chib","Laplace")))
+#df_efficiency %>%
+#  select(Estimator, mc_mean, mc_sd) %>%
+#  arrange(factor(Estimator, levels = c("Prior", "HME", "AIS", "Power Posterior", "SMC","Chib","Laplace")))
 
 #Plots without Chib
 df_compare_nochib <- df_compare %>%
@@ -1400,6 +1464,21 @@ ggplot(df_chib,
   coord_flip() +
   theme_minimal()
 
+
+ggplot(df_chib,
+       aes(x = Estimator, y = Estimate)) +
+  geom_boxplot(
+    width = 0.3,
+    fill = "#C77CFF",
+    outlier.shape = NA
+  ) +
+  labs(
+    title = "Chib evidence estimates",
+    y = "Log Evidence",
+    x = ""
+  ) +
+  coord_flip(ylim = c(NA, 125)) +
+  theme_minimal()
 #df_laplace_chib <- df_compare %>%
 #  filter(Estimator %in% c("Laplace", "Chib")) %>%
 #  mutate(
