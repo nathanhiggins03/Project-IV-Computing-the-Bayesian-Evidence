@@ -1,1 +1,331 @@
+#Initial visualisation of galaxies data
 
+data(galaxies, package = "MASS")
+y<-galaxies/1000
+hist(y, freq = FALSE,
+     main = "Galaxy velocities",
+     xlab = "Velocity (1000 km/s)")
+lines(density(y), lwd = 2)
+
+library(ggplot2)
+
+data(galaxies, package = "MASS")
+
+y <- galaxies / 1000
+
+ggplot(data.frame(y), aes(x = y)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 30,
+                 fill = "steelblue",
+                 color = "black") +
+  labs(
+    title = "Galaxy velocities",
+    x = "Velocity (1000 km/s)",
+    y = "Density"
+  ) +
+  theme_minimal()
+
+#Eventually plot each Mixture model curve on top of this to compare if model chosen
+#by evidence looks visually ok
+
+
+#Now need to code up STAN models
+
+
+#FIND CORRECT MODEL INPUTS SO SAME AS PAPER
+#The run each algorithm say 30 times, plot/table resullts- means/standard errors, run time
+#Do this for several values of K - compare to other papers reuslts 
+#Choose number of K using Bayes factors from results
+#plot each model with each value of K, see if visually Bayes factor suggestion is correct
+
+
+#Posterior samples
+set.seed(123)
+K <- 3   # or any K you want to test
+y<- galaxies/1000
+stan_data <- list(
+  N = length(y),
+  K = K,
+  y = y,
+  
+  alpha = rep(1, K),        # uniform Dirichlet
+  mu0 = mean(y),     # data-centered prior
+  lambda0 = 2.6/(max(y)-min(y)),           # weak prior on means
+  a0 = 1.28,                   # weak Inv-Gamma
+  b0 = 0.36*(mean(y^2) - (mean(y)^2))
+)
+
+
+library(rstan)
+
+setwd("~/Desktop/Project IV")   # set working directory to Project IV folder
+
+library(rstan)
+library(durhamSLR)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+fit <- stan(
+  file = "Posterior Mixture model.stan",
+  data = stan_data,
+  chains = 4,
+  iter = 4000,
+  warmup = 2000
+)
+
+#Diagnostic checks
+print(fit)
+output = as.array(fit)
+diagnostics(output)
+
+
+
+
+
+
+post <- rstan::extract(fit)
+
+omega  <- post$omega        # S x K
+mu     <- post$mu           # S x K
+sigma  <- sqrt(post$sigma2) # convert variance to sd
+
+mixture_density <- function(x, omega, mu, sigma) {
+  
+  S <- nrow(omega)
+  K <- ncol(omega)
+  M <- length(x)
+  
+  dens <- matrix(0, nrow = S, ncol = M)
+  
+  for (k in 1:K) {
+    
+    # Create S x M matrix of component densities
+    comp_dens <- sapply(1:S, function(s)
+      dnorm(x, mean = mu[s, k], sd = sigma[s, k])
+    )
+    
+    comp_dens <- t(comp_dens)   # make S x M
+    
+    dens <- dens + omega[, k] * comp_dens
+  }
+  
+  colMeans(dens)
+}
+
+x_grid <- seq(min(y), max(y), length.out = 500)
+
+mix_dens <- mixture_density(x_grid, omega, mu, sigma)
+
+library(ggplot2)
+
+ggplot(data.frame(y), aes(x = y)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 30,
+                 fill = "grey85",
+                 color = "black") +
+  geom_line(data = data.frame(x = x_grid, dens = mix_dens),
+            aes(x = x, y = dens),
+            color = "red",
+            linewidth = 1.2) +
+  labs(title = paste("Galaxy velocities - Mixture model (K =", K, ")"),
+       x = "Velocity (1000 km/s)",
+       y = "Density") +
+  theme_minimal()
+
+
+
+K_values <- c(3,4,5,6,8,11)
+
+dens_list <- list()
+fit_list  <- list()
+
+for (K in K_values) {
+  
+  cat("Running K =", K, "\n")
+  
+  stan_data$K <- K
+  stan_data$alpha <- rep(1, K)
+  
+  fit <- stan(
+    file = "Posterior Mixture model.stan",
+    data = stan_data,
+    chains = 4,
+    iter = 4000,
+    warmup = 2000
+  )
+  
+  post  <- rstan::extract(fit)
+  omega <- post$omega
+  mu    <- post$mu
+  sigma <- sqrt(post$sigma2)
+  
+  dens_list[[as.character(K)]] <-
+    mixture_density(x_grid, omega, mu, sigma)
+  
+  fit_list[[as.character(K)]] <- fit
+}
+
+
+
+plot_df <- data.frame(x = x_grid)
+
+for (K in names(dens_list)) {
+  plot_df[[paste0("K=", K)]] <- dens_list[[K]]
+}
+
+library(reshape2)
+plot_long <- melt(plot_df, id.vars = "x")
+
+ggplot(data.frame(y), aes(x = y)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 30,
+                 fill = "steelblue",
+                 color = "black") +
+  geom_line(data = plot_long,
+            aes(x = x, y = value, color = variable),
+            linewidth = 1) +
+  labs(title = "Galaxy velocities - Mixture model comparison",
+       x = "Velocity (1000 km/s)",
+       y = "Density",
+       color = "Model") +
+  theme_minimal()
+
+
+
+
+
+
+#RUN HERE FOR SAVED DATA:
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+setwd("~/Desktop/Project IV")
+#write.csv(df_compare, file = "kComponentDataNEW.csv", quote=FALSE, row.names=FALSE)
+df_compare = read.csv("kComponentDataNEW.csv", header=TRUE)
+df_compare$Estimator <- factor(
+  df_compare$Estimator,
+  levels = c("Power Posterior")
+)
+K_values <- c(3,4,5,6,8,11)
+df_compare$K <- factor(df_compare$K,
+                       levels = paste0("K = ", K_values))
+
+ggplot(
+  subset(df_compare, Estimator == "AIS"),
+  aes(x = K, y = Estimate, fill = K)
+) +
+  geom_boxplot() +
+  labs(
+    title = "AIS estimates for different K",
+    x = "K",
+    y = "Log evidence"
+  ) +
+  theme_minimal()
+
+ggplot(
+  subset(df_compare, Estimator == "Power Posterior"),
+  aes(x = K, y = Estimate, fill= K)
+) +
+  geom_boxplot() +
+  labs(
+    title = "Power posterior estimates for different K",
+    x = "K",
+    y = "Log evidence"
+  ) +
+  theme_minimal()+
+  coord_cartesian(ylim = c(-228.5, NA))
+
+df_efficiency <- df_compare %>%
+  group_by(K, Estimator) %>%
+  summarise(
+    mean_estimate = mean(Estimate),
+    mean_time = mean(Time),
+    mc_sd     = sd(Estimate),
+    .groups = "drop"
+  )
+
+ggplot(df_efficiency,
+       aes(x = mean_time,
+           y = mc_sd,
+           colour = K,
+           shape = Estimator)) +
+  geom_point(size = 4) +
+  labs(
+    title = "Efficiency comparison",
+    x = "Mean runtime (seconds)",
+    y = "Monte Carlo SD"
+  ) +
+  theme_minimal()
+
+
+df_model_probs <- df_efficiency %>%
+  select(K, Estimator, mean_estimate) %>%
+  filter(Estimator == "Power Posterior") %>%   # keep only PP
+  mutate(log_evidence = mean_estimate) %>%     # rename for clarity
+  # log-sum-exp trick
+  mutate(
+    max_log = max(log_evidence),
+    log_sum_exp = max_log + log(sum(exp(log_evidence - max_log))),
+    posterior_model_prob = exp(log_evidence - log_sum_exp)
+  ) %>%
+  select(K, log_evidence, posterior_model_prob)
+
+df_model_probs
+model_probs <- df_model_probs$posterior_model_prob
+
+# Remove "K = " from names
+clean_K <- gsub("K = ", "", df_model_probs$K)
+
+names(model_probs) <- clean_K
+
+model_probs
+
+bma_density <- rep(0, length(x_grid))
+
+for (K in names(dens_list)) {
+  bma_density <- bma_density +
+    model_probs[K] * dens_list[[K]]
+}
+
+best_K_density <- dens_list[["5"]]
+
+library(ggplot2)
+
+plot_df <- data.frame(
+  x = x_grid,
+  BMA = bma_density,
+  K5  = dens_list[["5"]]
+)
+
+plot_long <- pivot_longer(plot_df,
+                          cols = c("BMA", "K5"),
+                          names_to = "Model",
+                          values_to = "Density")
+
+ggplot(data.frame(y), aes(x = y)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 30,
+                 fill = "steelblue",
+                 color = "black") +
+  geom_line(data = plot_long,
+            aes(x = x, y = Density,
+                colour = Model,
+                linetype = Model),
+            linewidth = 1.2) +
+  scale_colour_manual(
+    values = c("BMA" = "red",
+               "K5"  = "#00BA38"),
+    labels = c("BMA" = "Bayesian\nModel \nAveraging",
+               "K5"  = "K = 5")
+  ) +
+  scale_linetype_manual(
+    values = c("BMA" = "solid",
+               "K5"  = "dashed"),
+    labels = c("BMA" = "Bayesian\nModel \nAveraging",
+               "K5"  = "K = 5")
+  ) +
+  labs(title = "Galaxy velocities - Mixture model predictive density with K = 5 vs Bayesian model averaging",
+       x = "Velocity (1000 km/s)",
+       y = "Density",
+       colour = "Model",
+       linetype = "Model") +
+  theme_minimal()
