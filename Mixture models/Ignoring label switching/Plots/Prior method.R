@@ -1,7 +1,7 @@
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(100000)   # <-- choose MC sizes
+MC_values <- c(100000)   
 
 df_all <- data.frame()
 
@@ -39,10 +39,10 @@ for (MC_sample in MC_values) {
     K = K
     y = y
     
-    alpha = rep(1, K)        # uniform Dirichlet
-    mu0 = mean(y)     # data-centered prior
-    lambda0 = 2.6/(max(y)-min(y))           # weak prior on means
-    a0 = 1.28                   # weak Inv-Gamma
+    alpha = rep(1, K)        
+    mu0 = mean(y)     
+    lambda0 = 2.6/(max(y)-min(y))           
+    a0 = 1.28                  
     b0 = 0.36*(mean(y^2) - (mean(y)^2))
     
     
@@ -63,10 +63,10 @@ for (MC_sample in MC_values) {
         K = K,
         y = y,
         
-        alpha = alpha,        # uniform Dirichlet
-        mu0 = mu0,     # data-centered prior
-        lambda0 = lambda0,         # weak prior on means
-        a0 = a0,                # weak Inv-Gamma
+        alpha = alpha,       
+        mu0 = mu0,     
+        lambda0 = lambda0,         
+        a0 = a0,                
         b0 = b0
       ),
       iter = 2*MC_sample,
@@ -124,7 +124,7 @@ for (MC_sample in MC_values) {
     }
     
     
-    #Apply log sum exp trick to log(mean(likelihood))
+
     m <- max(likelihood_prior_log)
     stan_prior_le <- m + log(mean(exp(likelihood_prior_log - m)))
     est_simulation[k]<-stan_prior_le
@@ -145,7 +145,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
