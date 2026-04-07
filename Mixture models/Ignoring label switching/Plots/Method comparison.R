@@ -6,7 +6,7 @@
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(100000)   # <-- choose MC sizes
+MC_values <- c(100000)   
 
 df_all <- data.frame()
 
@@ -44,10 +44,10 @@ for (MC_sample in MC_values) {
     K = K
     y = y
     
-    alpha = rep(1, K)        # uniform Dirichlet
-    mu0 = mean(y)     # data-centered prior
-    lambda0 = 2.6/(max(y)-min(y))           # weak prior on means
-    a0 = 1.28                   # weak Inv-Gamma
+    alpha = rep(1, K)        
+    mu0 = mean(y)     
+    lambda0 = 2.6/(max(y)-min(y))          
+    a0 = 1.28                  
     b0 = 0.36*(mean(y^2) - (mean(y)^2))
     
     
@@ -68,10 +68,10 @@ for (MC_sample in MC_values) {
         K = K,
         y = y,
         
-        alpha = alpha,        # uniform Dirichlet
-        mu0 = mu0,     # data-centered prior
-        lambda0 = lambda0,         # weak prior on means
-        a0 = a0,                # weak Inv-Gamma
+        alpha = alpha,        
+        mu0 = mu0,     
+        lambda0 = lambda0,      
+        a0 = a0,               
         b0 = b0
       ),
       iter = 2*MC_sample,
@@ -150,7 +150,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
@@ -164,11 +164,11 @@ df_prior <- df_all   # for Prior MC
 
 #HME
 
-#Need to change to incorporate more efficient code for HME
+
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(10000)    # <-- choose MC sizes
+MC_values <- c(10000)    
 
 df_all <- data.frame()
 
@@ -211,10 +211,10 @@ for (MC_sample in MC_values) {
     K = K
     y = y
     
-    alpha = rep(1, K)        # uniform Dirichlet
-    mu0 = mean(y)     # data-centered prior
-    lambda0 = 2.6/(max(y)-min(y))           # weak prior on means
-    a0 = 1.28                   # weak Inv-Gamma
+    alpha = rep(1, K)        
+    mu0 = mean(y)     
+    lambda0 = 2.6/(max(y)-min(y))           
+    a0 = 1.28                   
     b0 = 0.36*(mean(y^2) - (mean(y)^2))
     
     #(Log) Harmonic mean estimator
@@ -227,10 +227,10 @@ for (MC_sample in MC_values) {
       K = K,
       y = y,
       
-      alpha = alpha,        # uniform Dirichlet
-      mu0 = mu0,     # data-centered prior
-      lambda0 = lambda0,         # weak prior on means
-      a0 = a0,                # weak Inv-Gamma
+      alpha = alpha,       
+      mu0 = mu0,    
+      lambda0 = lambda0,         
+      a0=a0, 
       b0 = b0
     )
     
@@ -304,7 +304,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
@@ -397,7 +397,6 @@ gibbs_mix <- function(S, y, K, alpha, mu0, lambda0, a0, b0) {
   list(theta=theta_out, z=z_out)
 }
 
-# Wrap the full Chib procedure in a function
 run_chib <- function() {
   theta_init <- make_theta_init_prior(K, alpha, mu0, lambda0, a0, b0)
   optimiser <- optim(theta_init, l_theta, y=y, K=K, alpha=alpha,
@@ -456,7 +455,7 @@ elapsed_time <- (pt_end - pt_start)["elapsed"]
 mean_runtime <- elapsed_time / 30
 
 df_chib <- data.frame(Estimate = chib_estimates,
-                      Time     = rep(mean_runtime,30),   # ← ADD THIS LINE
+                      Time     = rep(mean_runtime,30),   
                       MC = factor(paste0("N = ", 0),
                                   levels = paste0("N = ", 0)))
 
@@ -470,10 +469,7 @@ df_chib <- data.frame(Estimate = chib_estimates,
 
 #Laplace
 
-############################
-## Laplace approximation ##
-## Multiple initialisations
-############################
+
 
 library(extraDistr)
 library(mvtnorm)
@@ -493,9 +489,6 @@ lambda0 <- 2.6 / (max(y) - min(y))
 a0 <- 1.28
 b0 <- 0.36 * (mean(y^2) - mean(y)^2)
 
-############################
-# Log posterior
-############################
 l_theta <- function(theta, y, K, alpha, mu0, lambda0, a0, b0) {
   
   eta <- c(theta[1:(K-1)], 0)
@@ -518,9 +511,7 @@ l_theta <- function(theta, y, K, alpha, mu0, lambda0, a0, b0) {
   ll + lp
 }
 
-############################
-# Random initialisation - two options
-############################
+
 make_theta_init_prior <- function() {
   omega <- as.numeric(rdirichlet(1, alpha))
   eta <- log(omega[-K] / omega[K])
@@ -537,9 +528,7 @@ make_theta_init_wild <- function(K, y) {
   )
 }
 
-############################
-# Single Laplace run
-############################
+
 run_laplace <- function() {
   
   start <- proc.time()
@@ -577,9 +566,7 @@ run_laplace <- function() {
   c(log_laplace, time)
 }
 
-############################
-# Run 30 times
-############################
+
 res <- replicate(30, run_laplace())
 res <- t(res)
 colnames(res) <- c("Estimate", "Time")
@@ -598,9 +585,6 @@ df_laplace <- data.frame(
 
 
 
-#AIS
-
-#Need to change to incorporate more efficient code for HME
 #AIS
 
 library(ggplot2)
@@ -653,7 +637,7 @@ for (MC_sample in MC_values) {
     Beta_t <- function(t) (t / T)^c_power
     t_list <- Beta_t(0:T)
     
-    # ---- Sample from prior ----
+   
     prior_fit <- sampling(
       prior_model,
       data = list(
@@ -692,7 +676,7 @@ for (MC_sample in MC_values) {
       ll
     }
     
-    # ---- Helpers for MH ----
+
     
     omega_to_eta <- function(omega) log(omega[-K] / omega[K])
     
@@ -713,12 +697,12 @@ for (MC_sample in MC_values) {
         log_prior(omega, mu, sigma2)
     }
     
-    # Proposal scales (tune if needed)
+    # Proposal scale
     rw_sd_mu <- 0.2
     rw_sd_logsigma2 <- 0.15
     rw_sd_eta <- 0.2
     
-    # ---- NEW: MH step function ----
+
     
     mh_step <- function(omega, mu, sigma2, t_curr) {
       
@@ -741,10 +725,9 @@ for (MC_sample in MC_values) {
         return(list(omega = omega, mu = mu, sigma2 = sigma2))
       }
     }
+
     
-    # ---- AIS loop with MULTIPLE MH STEPS ----
-    
-    n_mh_steps <- 3   # <-- only real change
+    n_mh_steps <- 3 
     
     for (t_idx in 2:(T + 1)) {
       
@@ -761,7 +744,7 @@ for (MC_sample in MC_values) {
         mu_curr     <- mu_store[t_idx - 1, i, ]
         sigma2_curr <- sigma2_store[t_idx - 1, i, ]
         
-        # ---- Weight update (UNCHANGED) ----
+        # Weight
         
         ll <- mix_loglik(
           y,
@@ -773,7 +756,7 @@ for (MC_sample in MC_values) {
         log_w[t_idx, i] <- log_w[t_idx - 1, i] +
           (t_curr - t_prev) * ll
         
-        # ---- NEW: MULTI-STEP MH ----
+        #MH-step
         
         for (s in 1:n_mh_steps) {
           out <- mh_step(omega_curr, mu_curr, sigma2_curr, t_curr)
@@ -789,7 +772,7 @@ for (MC_sample in MC_values) {
       }
     }
     
-    # ---- Log evidence ----
+
     
     final_log_w <- log_w[T + 1, ]
     m <- max(final_log_w)
@@ -818,11 +801,11 @@ df_ais <- df_all
 
 #Power posterior
 
-#Need to change to incorporate more efficient code for HME
+
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(2000)   # <-- choose MC sizes
+MC_values <- c(2000)  
 T_value<-10
 
 df_all <- data.frame()
@@ -876,7 +859,7 @@ for (MC_sample in MC_values) {
     Beta_t <- function(t) (t / T)^c_pow
     t_list <- Beta_t(0:T)
     
-    # Mixture log-likelihood
+
     
     mix_loglik <- function(y, omega, mu, sigma2) {
       ll <- 0
@@ -1001,7 +984,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
@@ -1017,11 +1000,11 @@ df_pp <- df_all      # for TI
 #SMC
 
 
-#Need to change to incorporate more efficient code for HME
+
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(20000)  # <-- choose MC sizes
+MC_values <- c(20000)  
 T_value<-20
 df_all <- data.frame()
 
@@ -1073,7 +1056,7 @@ for (MC_sample in MC_values) {
     t_list <- Beta_t(0:T)
     
     
-    # Mixture log-likelihood
+
     
     mix_loglik <- function(y, omega, mu, sigma2) {
       ll <- 0
@@ -1174,7 +1157,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
@@ -1437,7 +1420,7 @@ ggplot(df_laplace,
        aes(x = Estimator, y = Estimate)) +
   geom_boxplot(
     width = 0.3,
-    fill = "#FF61C3",   # choose any colour you like
+    fill = "#FF61C3",   
     outlier.shape = NA
   ) +
   labs(
