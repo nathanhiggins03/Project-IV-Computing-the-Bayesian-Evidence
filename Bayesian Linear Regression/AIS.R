@@ -17,7 +17,7 @@ library(mvtnorm)
 library(extraDistr)
 
 
-# --- 1. DATA, PRIORS, and HYPERPARAMETERS ---
+#Data/priors
 
 #Data
 #y=2+3x+ϵ,ϵ∼N(0,0.5^2)
@@ -51,10 +51,10 @@ betaN <- beta0 + 0.5 * (t(y) %*% y + t(m0) %*% Lambda0 %*% m0 - t(mN) %*% Lambda
 # AIS Parameters
 T <- 40             # Number of tempered distributions 
 Nsim <- 4000           # Number of AIS particles/samples
-c_power <- 2        # Power schedule exponent
+c_power <- 2        # Power schedule 
 
 
-# Function for the log-power posterior (used for calculating weights)
+# Function for the log-power posterior 
 # log p_t(theta) = t * log L(x|theta) + log pi(theta)
 power_post_log<- function(t, theta,X,y){
   Beta<- theta[1:2]
@@ -78,15 +78,14 @@ mh_step <- function(theta, beta_temp) {
   Beta <- theta[1:2]
   sigma_sq <- theta[3]
   
-  # --- Proposals ---
+  # Proposal
   Beta_prop <- Beta + rnorm(2, 0, 0.2)
   
-  # log-scale proposal for variance (IMPORTANT)
+  # log-scale proposal for variance 
   sigma_sq_prop <- sigma_sq * exp(rnorm(1, 0, 0.1))
   
   theta_prop <- c(Beta_prop, sigma_sq_prop)
   
-  # --- Log densities ---
   log_curr <- power_post_log(beta_temp, theta, X, y)
   log_prop <- power_post_log(beta_temp, theta_prop, X, y)
   
@@ -142,11 +141,6 @@ log_w[1,] <- 0
 
 # AIS MAIN LOOP
 
-# Define the extended mixing parameters
-#N_samples_kept <- Nsim          # 2000 samples kept (for weight calculation)
-#N_samples_warmup <- 4000     # 4000 iterations for warmup
-
-
 for(t_index in 2:(T+1)){
   power_curr <- t_list[t_index]
   power_prev <- t_list[t_index - 1]
@@ -156,17 +150,16 @@ for(t_index in 2:(T+1)){
   
   for (i in 1:Nsim) {
     
-    # --- Previous particle ---
     theta_prev <- c(beta_samples[,t_index - 1, i], 
                     sigma_sq_samples[t_index - 1, i])
     
-    # ---- 1. Weight update (UNCHANGED) ----
+    # Weight
     log_w_curr <- power_post_log(power_curr, theta_prev, X, y)
     log_w_prev <- power_post_log(power_prev, theta_prev, X, y)
     
     log_w[t_index, i] <- log_w[t_index - 1, i] + (log_w_curr - log_w_prev)
     
-    # ---- 2. MH transition ----
+    # MH transition
     theta_new <- mh_step(theta_prev, power_curr)
     
     # Store updated particle
@@ -174,7 +167,7 @@ for(t_index in 2:(T+1)){
     sigma_sq_samples[t_index, i] <- theta_new[3]
   }
 }
-# The final estimate is log(E_i[w_i]) using Log-Sum-Exp for stability.
+# The final estimate is log(E_i[w_i]) using log-sum-exp for stability.
 
 
 final_log_weights <- log_w[T+1, ]
