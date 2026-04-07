@@ -3,7 +3,7 @@
 library(ggplot2)
 
 Sim <- 30
-T_values <- c(5,10,50,100)   # <-- choose T
+T_values <- c(5,10,50,100)  
 
 df_all <- data.frame()
 
@@ -106,7 +106,7 @@ for (T_sample in T_values) {
         alpha0 = alpha0,
         beta0 = beta0
       ),
-      iter = 100000,          # number of draws you want
+      iter = 100000,         
       chains = 1,
       algorithm = "Fixed_param",
       refresh = 0
@@ -190,7 +190,7 @@ for (T_sample in T_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       T = factor(paste0("T = ", T_sample),
                  levels = paste0("T = ", T_values))
     )
