@@ -1,10 +1,7 @@
-#UPDATE SMC WITH NEW T AND GENERAL NEW CHANGES AS WELL
-#Need to change to incorporate more efficient code for HME
-
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(25,150,500,5000)   # <-- choose MC sizes
+MC_values <- c(25,150,500,5000)   
 
 df_all <- data.frame()
 
@@ -78,11 +75,10 @@ for (MC_sample in MC_values) {
     # AIS Parameters
     T <- 25             # Number of tempered distributions 
     Nsim <- MC_sample           # Number of AIS particles/samples
-    c_power <- 2        # Power schedule exponent
+    c_power <- 2        # Power schedule 
     
     
-    # Function for the log-power posterior (used for calculating weights)
-    # log p_t(theta) = t * log L(x|theta) + log pi(theta)
+    # Function for the log-power posterior
     power_post_log<- function(t, theta,X,y){
       Beta<- theta[1:2]
       sigma_sq<-theta[3]
@@ -94,7 +90,7 @@ for (MC_sample in MC_values) {
       return(out)
     }
     
-    # Tempering function
+
     Beta_t <- function(t, c=c_power){
       return((t/T)^c)
     }
@@ -104,17 +100,17 @@ for (MC_sample in MC_values) {
       Beta <- theta[1:2]
       sigma_sq <- theta[3]
       
-      # Proposals
+      # Proposal
       Beta_prop <- Beta + rnorm(2, 0, 0.2)
       sigma_sq_prop <- sigma_sq * exp(rnorm(1, 0, 0.1))
       
       theta_prop <- c(Beta_prop, sigma_sq_prop)
       
-      # Log densities
+     
       log_curr <- power_post_log(beta_temp, theta, X, y)
       log_prop <- power_post_log(beta_temp, theta_prop, X, y)
       
-      # Correct MH ratio (log-scale correction)
+
       log_accept_ratio <- (log_prop - log_curr) +
         log(sigma_sq_prop) - log(sigma_sq)
       
@@ -180,13 +176,13 @@ for (MC_sample in MC_values) {
         theta_prev <- c(beta_samples[,t_index - 1, i], 
                         sigma_sq_samples[t_index - 1, i])
         
-        # ---- 1. Weight update ----
+        # Weight
         log_w_curr <- power_post_log(power_curr, theta_prev, X, y)
         log_w_prev <- power_post_log(power_prev, theta_prev, X, y)
         
         log_w[t_index, i] <- log_w[t_index - 1, i] + (log_w_curr - log_w_prev)
         
-        # ---- 2. MH transitions (IMPROVED: multiple steps) ----
+        # MH -step
         theta_tmp <- theta_prev
         for (s in 1:3) {
           theta_tmp <- mh_step(theta_tmp, power_curr, X, y, m0, Lambda0, alpha0, beta0)
