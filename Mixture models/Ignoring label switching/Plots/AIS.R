@@ -1,10 +1,10 @@
 #OLD VERSION - IGNORE - SEE METHOD COMPARISON CODE FOR ACTUAL IMPLEMENTATION
 
-#Need to change to incorporate more efficient code for HME
+
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(12000)   # <-- choose MC sizes
+MC_values <- c(12000)  
 T_value<-20
 df_all <- data.frame()
 
@@ -57,7 +57,7 @@ for (MC_sample in MC_values) {
     t_list <- Beta_t(0:T)
     
     
-    # 1. Sample from prior
+  
     
     prior_fit <- sampling(
       prior_model,
@@ -79,7 +79,7 @@ for (MC_sample in MC_values) {
     
     log_w <- matrix(0, nrow = T + 1, ncol = Nsim)
     
-    # Mixture log-likelihood
+
     
     mix_loglik <- function(y, omega, mu, sigma2) {
       ll <- 0
@@ -147,7 +147,7 @@ for (MC_sample in MC_values) {
     }
     
     
-    #Log marginal likelihood
+  
     
     final_log_w <- log_w[T + 1, ]
     m <- max(final_log_w)
