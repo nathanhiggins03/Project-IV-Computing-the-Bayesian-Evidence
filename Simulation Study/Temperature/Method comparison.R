@@ -1,8 +1,8 @@
-#Need to change to incorporate more efficient code for HME
+
 library(ggplot2)
 
 Sim <- 30
-T_values <- c(50)   # <-- choose T
+T_values <- c(50)  
 
 df_all <- data.frame()
 
@@ -76,10 +76,10 @@ for (T_sample in T_values) {
     # AIS Parameters
     T <- T_sample             # Number of tempered distributions 
     Nsim <- 1000           # Number of AIS particles/samples
-    c_power <- 2        # Power schedule exponent
+    c_power <- 2        # Power schedule 
     
     
-    # Function for the log-power posterior (used for calculating weights)
+    # Function for the log-power posterior 
     # log p_t(theta) = t * log L(x|theta) + log pi(theta)
     power_post_log<- function(t, theta,X,y){
       Beta<- theta[1:2]
@@ -108,11 +108,10 @@ for (T_sample in T_values) {
       
       theta_prop <- c(Beta_prop, sigma_sq_prop)
       
-      # Log densities
+
       log_curr <- power_post_log(beta_temp, theta, X, y)
       log_prop <- power_post_log(beta_temp, theta_prop, X, y)
-      
-      # Log-scale correction
+
       log_accept_ratio <- (log_prop - log_curr) +
         log(sigma_sq_prop) - log(sigma_sq)
       
@@ -178,16 +177,15 @@ for (T_sample in T_values) {
         theta_prev <- c(beta_samples[,t_index - 1, i], 
                         sigma_sq_samples[t_index - 1, i])
         
-        # ---- 1. Weight update (UNCHANGED) ----
+        # Weight
         log_w_curr <- power_post_log(power_curr, theta_prev, X, y)
         log_w_prev <- power_post_log(power_prev, theta_prev, X, y)
         
         log_w[t_index, i] <- log_w[t_index - 1, i] + (log_w_curr - log_w_prev)
         
-        # ---- 2. MH transitions (NEW, replaces Stan) ----
+        # MH-step
         theta_tmp <- theta_prev
         
-        # Do multiple MH steps for better mixing
         for (s in 1:3) {
           theta_tmp <- mh_step(theta_tmp, power_curr, X, y, m0, Lambda0, alpha0, beta0)
         }
@@ -199,7 +197,7 @@ for (T_sample in T_values) {
     }
     
     
-    # The final estimate is log(E_i[w_i]) using Log-Sum-Exp for stability.
+    # The final estimate is log(E_i[w_i]) using log-sum-exp for stability.
     
     
     final_log_weights <- log_w[T+1, ]
@@ -227,7 +225,7 @@ for (T_sample in T_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       T = factor(paste0("T = ", T_sample),
                  levels = paste0("T = ", T_values))
     )
@@ -244,7 +242,7 @@ df_ais <- df_all     # for AIS
 library(ggplot2)
 
 Sim <- 30
-T_values <- c(50)   # <-- choose T
+T_values <- c(50)   
 
 df_all <- data.frame()
 
@@ -430,7 +428,7 @@ for (T_sample in T_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       T = factor(paste0("T = ", T_sample),
                  levels = paste0("T = ", T_values))
     )
@@ -443,12 +441,10 @@ df_pp <- df_all      # for TI
 
 
 
-
-#Need to change to incorporate more efficient code for HME
 library(ggplot2)
 
 Sim <- 30
-T_values <- c(5)   # <-- choose T
+T_values <- c(5)  
 
 df_all <- data.frame()
 
@@ -513,7 +509,7 @@ for (T_sample in T_values) {
         alpha0 = alpha0,
         beta0 = beta0
       ),
-      iter = 100000,          # number of draws you want
+      iter = 100000,          
       chains = 1,
       algorithm = "Fixed_param",
       refresh = 0
@@ -597,7 +593,7 @@ for (T_sample in T_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       T = factor(paste0("T = ", T_sample),
                  levels = paste0("T = ", T_values))
     )
