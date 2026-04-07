@@ -1,7 +1,4 @@
-############################
-## Laplace approximation ##
-## Multiple initialisations
-############################
+
 
 library(extraDistr)
 library(mvtnorm)
@@ -21,9 +18,7 @@ lambda0 <- 2.6 / (max(y) - min(y))
 a0 <- 1.28
 b0 <- 0.36 * (mean(y^2) - mean(y)^2)
 
-############################
-# Log posterior
-############################
+
 l_theta <- function(theta, y, K, alpha, mu0, lambda0, a0, b0) {
   
   eta <- c(theta[1:(K-1)], 0)
@@ -46,9 +41,7 @@ l_theta <- function(theta, y, K, alpha, mu0, lambda0, a0, b0) {
   ll + lp
 }
 
-############################
-# Random initialisation - two options
-############################
+
 make_theta_init_prior <- function() {
   omega <- as.numeric(rdirichlet(1, alpha))
   eta <- log(omega[-K] / omega[K])
@@ -59,15 +52,13 @@ make_theta_init_prior <- function() {
 
 make_theta_init_wild <- function(K, y) {
   c(
-    rnorm(K - 1, 0, 3),                 # eta (weights)
-    runif(K, min(y) - 5, max(y) + 5),   # mu (very wide)
-    rnorm(K, 0, 3)                      # log sigma2
+    rnorm(K - 1, 0, 3),                 
+    runif(K, min(y) - 5, max(y) + 5),   
+    rnorm(K, 0, 3)                      
   )
 }
 
-############################
-# Single Laplace run
-############################
+
 run_laplace <- function() {
   
   start <- proc.time()
@@ -105,18 +96,13 @@ run_laplace <- function() {
   c(log_laplace, time)
 }
 
-############################
-# Run 30 times
-############################
 res <- replicate(30, run_laplace())
 res <- t(res)
 colnames(res) <- c("Estimate", "Time")
 df <- as.data.frame(res)
 df <- df %>% filter(is.finite(Estimate))
 
-############################
-# 1. Violin + boxplot
-############################
+
 ggplot(df, aes(x = "", y = Estimate)) +
   geom_violin(fill = "skyblue", alpha = 0.6) +
   geom_boxplot(width = 0.1, fill = "white", outlier.shape = NA) +
@@ -127,9 +113,6 @@ ggplot(df, aes(x = "", y = Estimate)) +
   ) +
   theme_minimal()
 
-############################
-# 2. Raincloud plot
-############################
 ggplot(df, aes(x = "", y = Estimate)) +
   geom_violin(fill = "skyblue", alpha = 0.4) +
   geom_quasirandom(size = 2, alpha = 0.8) +
@@ -140,9 +123,6 @@ ggplot(df, aes(x = "", y = Estimate)) +
   ) +
   theme_minimal()
 
-############################
-# 3. Efficiency plot
-############################
 ggplot(df, aes(x = Time, y = Estimate)) +
   geom_point(size = 3, alpha = 0.7) +
   geom_smooth(se = FALSE, linetype = "dashed") +
@@ -154,9 +134,7 @@ ggplot(df, aes(x = Time, y = Estimate)) +
   theme_minimal()
 
 
-############################
-# Efficiency summary
-############################
+
 
 df_eff <- df %>%
   summarise(
@@ -164,9 +142,6 @@ df_eff <- df %>%
     sd_est    = sd(Estimate)
   )
 
-############################
-# Efficiency plot
-############################
 ggplot(df_eff, aes(x = mean_time, y = sd_est)) +
   geom_point(size = 4) +
   geom_text(
