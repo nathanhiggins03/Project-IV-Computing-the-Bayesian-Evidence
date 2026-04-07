@@ -222,7 +222,7 @@ for (T_sample in T_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       T = factor(paste0("T = ", T_sample),
                  levels = paste0("T = ", T_values))
     )
