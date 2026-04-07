@@ -49,21 +49,20 @@ l_theta <- function(theta, y, K,
 
 make_theta_init_prior <- function(K, alpha, mu0, lambda0, a0, b0) {
   
-  # mixture weights
   omega <- as.numeric(rdirichlet(1, alpha))
   eta <- log(omega[-K] / omega[K])
   
-  # component means
+
   mu <- rnorm(K, mu0, sqrt(1 / lambda0))
   
-  # component variances
+
   sigma2 <- rinvgamma(K, a0, b0)
   
   c(eta, mu, log(sigma2))
 }
 
 
-# Optimisation (θ*)
+# Optimisation
 #Options showing estimate depend on which mode found
 
 #theta_init <- c(
@@ -164,7 +163,7 @@ gibbs_out <- gibbs_mix(
 )
 
 
-# Posterior ordinate at θ* (Chib)
+# Posterior ordinate at mode 
 
 eta_star <- c(theta_star[1:(K-1)], 0)
 omega_star <- exp(eta_star) / sum(exp(eta_star))
@@ -214,7 +213,7 @@ m <- max(log_post_vals)
 log_post_mc <- m + log(mean(exp(log_post_vals - m)))
 
 
-# Prior + likelihood at θ*
+# Prior + likelihood at mode
 
 lprior <- ddirichlet(omega_star, alpha, log = TRUE) +
   sum(dnorm(mu_star, mu0, sqrt(1 / lambda0), log = TRUE)) +
