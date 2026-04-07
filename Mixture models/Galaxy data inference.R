@@ -23,17 +23,17 @@ ggplot(data.frame(y), aes(x = y)) +
 
 #Posterior samples
 set.seed(123)
-K <- 3   # or any K you want to test
+K <- 3   
 y<- galaxies/1000
 stan_data <- list(
   N = length(y),
   K = K,
   y = y,
   
-  alpha = rep(1, K),        # uniform Dirichlet
-  mu0 = mean(y),     # data-centered prior
-  lambda0 = 2.6/(max(y)-min(y)),           # weak prior on means
-  a0 = 1.28,                   # weak Inv-Gamma
+  alpha = rep(1, K),        
+  mu0 = mean(y),     
+  lambda0 = 2.6/(max(y)-min(y)),           
+  a0 = 1.28,                   
   b0 = 0.36*(mean(y^2) - (mean(y)^2))
 )
 
@@ -142,7 +142,7 @@ draws <- as_draws_df(fit) %>%
   arrange(.chain, .iteration)
 
 draws_mu_relabelled <- draws %>%
-  group_by(.chain) %>%                 # <<< critical
+  group_by(.chain) %>%                 
   rowwise() %>%
   mutate(
     mu_ord = list(sort(c(`mu[1]`, `mu[2]`, `mu[3]`))),
@@ -150,7 +150,7 @@ draws_mu_relabelled <- draws %>%
     `mu[2]` = mu_ord[[2]],
     `mu[3]` = mu_ord[[3]]
   ) %>%
-  select(.chain, .iteration, starts_with("mu[")) %>%  # <<< DROP EVERYTHING ELSE
+  select(.chain, .iteration, starts_with("mu[")) %>%  
   ungroup()
 
 
@@ -159,7 +159,7 @@ mu_array <- as_draws_array(draws_mu_relabelled)
 
 
 variables(mu_array)
-# should return: "mu[1]" "mu[2]" "mu[3]"
+
 
 trace_plot <- mcmc_trace(mu_array)
 
@@ -222,10 +222,10 @@ stan_data <- list(
   K = K,
   y = y,
   
-  alpha = rep(1, K),        # uniform Dirichlet
-  mu0 = mean(y),     # data-centered prior
-  lambda0 = 2.6/(max(y)-min(y)),           # weak prior on means
-  a0 = 1.28,                   # weak Inv-Gamma
+  alpha = rep(1, K),        
+  mu0 = mean(y),     
+  lambda0 = 2.6/(max(y)-min(y)),           
+  a0 = 1.28,                   
   b0 = 0.36*(mean(y^2) - (mean(y)^2))
 )
 
@@ -277,7 +277,7 @@ library(bayesplot)
 library(ggplot2)
 
 # Extract posterior samples for mu
-mu_array <- as.array(fit, pars = "mu")   # iterations × chains × parameters
+mu_array <- as.array(fit, pars = "mu")   
 
 # Optional: convert to matrix for summaries
 mu_mat <- as_draws_matrix(mu_array)
