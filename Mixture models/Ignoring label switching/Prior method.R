@@ -3,7 +3,7 @@
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(1000, 10000, 100000,1000000)   # <-- choose MC sizes
+MC_values <- c(1000, 10000, 100000,1000000)   
 
 df_all <- data.frame()
 
@@ -45,7 +45,7 @@ for (MC_sample in MC_values) {
     #Prior inputs
     d <- ncol(X)
     m0 <- rep(1, d)
-    Lambda0 <- diag(5, d)   # vague prior
+    Lambda0 <- diag(5, d)   
     alpha0 <- 3
     beta0  <- 36
     
@@ -110,7 +110,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,  
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
