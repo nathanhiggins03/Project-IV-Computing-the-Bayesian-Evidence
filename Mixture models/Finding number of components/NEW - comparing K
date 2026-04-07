@@ -1,6 +1,5 @@
 #Power posterior
 
-#Need to change to incorporate more efficient code for HME
 library(ggplot2)
 
 Sim <- 30
@@ -227,7 +226,7 @@ df_pp <- df_all      # for TI
 K_new <- c(3, 5)
 
 N_lookup_new <- c(
-  `3` = 4000,   # your new values
+  `3` = 4000,   
   `5` = 5000
 )
 
@@ -236,8 +235,6 @@ T_lookup_new <- c(
   `5` = 20
 )
 
-
-#Need to change to incorporate more efficient code for HME
 library(ggplot2)
 
 Sim <- 30
