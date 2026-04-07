@@ -13,7 +13,7 @@ start=proc.time()
 set.seed(123)
 
 
-# --- 1. DATA, PRIORS, and HYPERPARAMETERS ---
+#Data/priors
 
 #Data
 x<-rnorm(10,mean = 10,sd=2)
@@ -34,19 +34,17 @@ beta1<- beta0 + 1/2 * (n-1) * var(x) + (k0 *n * (mean(x) - m0)^2)/(2 * k1)
 # AIS Parameters
 T <- 50             # Number of tempered distributions 
 N <- 4000           # Number of AIS particles/samples
-c_power <- 2        # Power schedule exponent
+c_power <- 2        # Power schedule
 
 
-# Function for the log-power posterior (used for calculating weights)
+# Function for the log-power posterior 
 # log p_t(theta) = t * log L(x|theta) + log pi(theta)
 power_post_log <- function(t, theta, X, m0, k0, alpha0, beta0){
   mu <- theta[1]
   tau <- theta[2]
   
-  # 1. Tempered Log-Likelihood: t * log L(x | mu, tau)
   ll_t <- t * sum(dnorm(X, mean = mu, sd = sqrt(1/tau), log = TRUE))
-  
-  # 2. Log-Priors: log pi(mu | tau) + log pi(tau)
+
   lp_mu <- dnorm(mu, mean = m0, sd = sqrt(1/(k0 * tau)), log = TRUE)
   lp_tau <- dgamma(tau, shape = alpha0, rate = beta0, log = TRUE)
   
@@ -78,7 +76,7 @@ prior_sample_mu <- tail(extract(prior_fit, pars = 'mu')$'mu', N)
 prior_sample_tau <- tail(extract(prior_fit, pars = 'tau')$'tau', N)
 
 
-# Need to store outputs: [T+1 x N matrices]
+# Need to store outputs:
 mu_samples <- matrix(0, nrow = T + 1, ncol = N)
 tau_samples <- matrix(0, nrow = T + 1, ncol = N)
 log_w <- matrix(0, nrow = T + 1, ncol = N)
@@ -91,11 +89,6 @@ tau_samples[1,] <- prior_sample_tau
 log_w[1,] <- 0
 
 # AIS MAIN LOOP
-
-# Define the extended mixing parameters
-#N_samples_kept <- N          # 2000 samples kept (for weight calculation)
-#N_samples_warmup <- 4000     # 4000 iterations for warmup
-
 
 for(t_index in 2:(T+1)){
   power_curr <- t_list[t_index]
@@ -110,13 +103,13 @@ for(t_index in 2:(T+1)){
     theta_prev <- c(mu_samples[t_index - 1, i], 
                     tau_samples[t_index - 1, i])
     
-    # ---- 1. Weight update (UNCHANGED) ----
+#Weight update
     log_w_curr <- power_post_log(power_curr, theta_prev, x, m0, k0, alpha0, beta0)
     log_w_prev <- power_post_log(power_prev, theta_prev, x, m0, k0, alpha0, beta0)
     
     log_w[t_index, i] <- log_w[t_index - 1, i] + (log_w_curr - log_w_prev)
     
-    # ---- 2. ONE Metropolis–Hastings step ----
+# Metropolis–Hastings step 
     
     mu <- theta_prev[1]
     tau <- theta_prev[2]
@@ -144,7 +137,7 @@ for(t_index in 2:(T+1)){
   }
 }
 
-# The final estimate is log(E_i[w_i]) using Log-Sum-Exp for stability.
+# The final estimate is log(E_i[w_i]) using log-sum-exp for stability.
 
 
 final_log_weights <- log_w[T+1, ]
