@@ -117,7 +117,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
@@ -226,7 +226,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
@@ -374,7 +374,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
@@ -575,7 +575,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,  
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
@@ -781,7 +781,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
@@ -945,7 +945,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
