@@ -77,7 +77,7 @@ gibbs_mix <- function(S, y, K, alpha, mu0, lambda0, a0, b0) {
   list(theta=theta_out, z=z_out)
 }
 
-# Wrap the full Chib procedure in a function
+
 run_chib <- function() {
   theta_init <- make_theta_init_prior(K, alpha, mu0, lambda0, a0, b0)
   optimiser <- optim(theta_init, l_theta, y=y, K=K, alpha=alpha,
