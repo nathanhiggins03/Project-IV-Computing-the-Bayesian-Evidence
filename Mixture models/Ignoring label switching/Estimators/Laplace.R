@@ -18,10 +18,10 @@ N = length(y)
 K = K
 y = y
 
-alpha = rep(1, K)        # uniform Dirichlet
-mu0 = mean(y)     # data-centered prior
-lambda0 = 2.6/(max(y)-min(y))           # weak prior on means
-a0 = 1.28                   # weak Inv-Gamma
+alpha = rep(1, K)        
+mu0 = mean(y)     
+lambda0 = 2.6/(max(y)-min(y))           
+a0 = 1.28                   
 b0 = 0.36*(mean(y^2) - (mean(y)^2))
 
 #Laplace version 
@@ -36,7 +36,7 @@ library(extraDistr)
 l_theta <- function(theta, y, K,
                     alpha, mu0, lambda0, a0, b0) {
   
-  # unpack parameters
+  
   eta <- c(theta[1:(K-1)], 0)
   omega <- exp(eta) / sum(exp(eta))
   
@@ -45,7 +45,6 @@ l_theta <- function(theta, y, K,
   log_sigma2 <- theta[(2*K):(3*K-1)]
   sigma2 <- exp(log_sigma2)
   
-  # log-likelihood (marginal mixture)
   ll <- sum(sapply(y, function(yi) {
     m <- max(log(omega) + dnorm(yi, mu, sqrt(sigma2), log = TRUE))
     m + log(sum(exp(
