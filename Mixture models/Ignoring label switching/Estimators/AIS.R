@@ -42,7 +42,7 @@ Beta_t <- function(t) (t / T)^c_power
 t_list <- Beta_t(0:T)
 
 
-# 1. Sample from prior
+# Sample from prior
 
 prior_fit <- sampling(
   prior_model,
