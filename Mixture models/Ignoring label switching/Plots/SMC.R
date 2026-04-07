@@ -1,8 +1,8 @@
-#Need to change to incorporate more efficient code for HME
+
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(12000)  # <-- choose MC sizes
+MC_values <- c(12000)  
 T_value<-20
 df_all <- data.frame()
 
@@ -155,7 +155,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
