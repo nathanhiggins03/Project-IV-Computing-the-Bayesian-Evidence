@@ -2,7 +2,7 @@
 library(ggplot2)
 
 Sim <- 30
-MC_values <- c(100,1000,10000, 100000)   # <-- choose MC sizes
+MC_values <- c(100,1000,10000, 100000)   
 
 df_all <- data.frame()
 
@@ -179,7 +179,7 @@ for (MC_sample in MC_values) {
         ),
         iter = N_samples_kept,
         warmup = N_samples_warmup,
-        chains = 1,          # make sure chains = 1
+        chains = 1,          
         init = init_list,
         refresh = 0
       )
@@ -216,7 +216,7 @@ for (MC_sample in MC_values) {
     df_all,
     data.frame(
       Estimate = est_simulation,
-      Time     = time_simulation,   # ← ADD THIS LINE
+      Time     = time_simulation,   
       MC = factor(paste0("N = ", MC_sample),
                   levels = paste0("N = ", MC_values))
     )
