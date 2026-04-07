@@ -1,6 +1,5 @@
 #AIS
 
-#Need to change to incorporate more efficient code for HME
 library(ggplot2)
 
 Sim <- 30
@@ -205,7 +204,6 @@ df_ais <- df_all     # for AIS
 
 #Power posterior
 
-#Need to change to incorporate more efficient code for HME
 library(ggplot2)
 
 Sim <- 30
