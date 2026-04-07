@@ -14,7 +14,7 @@ generated quantities {
   vector[K] mu;              // component means
   vector<lower=0>[K] sigma2; // component variances
 
-  simplex[K] omega_sorted;    // <- moved here, top-level
+  simplex[K] omega_sorted;    
   vector[K] mu_sorted;        // temporary sorted vectors
   vector[K] sigma2_sorted;
   array[K] int idx;           // sorting indices
